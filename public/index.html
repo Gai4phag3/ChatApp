@@ -42,75 +42,87 @@
     <button>Send</button>
   </form>
 
-  <!-- Firebase SDKs -->
-  <script src="https://www.gstatic.com/firebasejs/10.3.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.3.1/firebase-firestore.js"></script>
+  <!-- Firebase SDKs - Using Modular SDK for better practice -->
+  <script type="module">
+    // Import the functions you need from the SDKs you need
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.3.1/firebase-app.js";
+    import { 
+      getFirestore, 
+      collection, 
+      addDoc, 
+      query, 
+      orderBy, 
+      onSnapshot 
+    } from "https://www.gstatic.com/firebasejs/10.3.1/firebase-firestore.js";
 
-  <script>
     // TODO: Replace with your actual Firebase config
     const firebaseConfig = {
       apiKey: "AIzaSyCx00DmHMLmiDbfFUiBN3w5ueIxAzLqWus",
       authDomain: "chitchat-254bc.firebaseapp.com",
       projectId: "chitchat-254bc",
-      storageBucket: "chitchat-254bc.appspot.com", // <-- fixed here
+      storageBucket: "chitchat-254bc.firebasestorage.app",
       messagingSenderId: "7406729436",
       appId: "1:7406729436:web:4ceec3453f658398215c19",
       measurementId: "G-27KYMHED4V"
     };
 
     // Initialize Firebase and Firestore
-    const app = firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
-  </script>
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-  <!-- Socket.IO -->
-  <script src="/socket.io/socket.io.js"></script>
-
-  <!-- Chat logic -->
-  <script>
-    const socket = io();
     const form = document.getElementById('form');
     const input = document.getElementById('input');
     const messages = document.getElementById('messages');
 
-    // Load previous messages from Firestore on page load
-    window.addEventListener("load", async () => {
-      const snapshot = await db.collection("messages")
-        .orderBy("timestamp", "asc")
-        .limit(50)
-        .get();
+    // **Step 1: Set up the Real-time Listener for Messages**
+    // Create a query to get messages, ordered by timestamp
+    const messagesQuery = query(
+      collection(db, "messages"),
+      orderBy("timestamp", "asc") // Order by timestamp ascending for chronological order
+    );
 
-      snapshot.forEach(doc => {
+    // Listen for real-time updates to the messages collection
+    onSnapshot(messagesQuery, (snapshot) => {
+      // Clear all existing messages in the UI to prevent duplicates
+      // This is simpler for now; for large apps, you'd update specific changes
+      messages.innerHTML = ''; 
+
+      snapshot.forEach((doc) => {
+        // Add each message to the UI
         const item = document.createElement('li');
-        item.textContent = doc.data().text;
+        item.textContent = doc.data().text; // Assuming 'text' field exists
         messages.appendChild(item);
       });
-
+      // Scroll to the bottom to show the latest messages
       messages.scrollTop = messages.scrollHeight;
+    }, (error) => {
+        console.error("Error listening to messages:", error);
+        // Handle error, e.g., display a message to the user
     });
 
-    // Send message on form submit
-    form.addEventListener('submit', function(e) {
+
+    // **Step 2: Send messages directly to Firestore**
+    form.addEventListener('submit', async function(e) {
       e.preventDefault();
-      if (input.value.trim()) {
-        socket.emit('chat message', input.value.trim());
-        input.value = '';
+      const messageText = input.value.trim();
+
+      if (messageText) {
+        try {
+          // Add the message to Firestore
+          await addDoc(collection(db, "messages"), {
+            text: messageText,
+            timestamp: Date.now() // Use Date.now() for simplicity, or serverTimestamp() for precision
+            // You might add name: "Anonymous" or auth.currentUser.displayName here later!
+          });
+          input.value = ''; // Clear input only after successful save
+        } catch (error) {
+          console.error("Error writing new message to Firestore:", error);
+          // Optionally, inform the user the message failed to send
+          alert("Failed to send message. Please try again.");
+        }
       }
     });
 
-    // Receive message in real-time
-    socket.on('chat message', function(msg) {
-      const item = document.createElement('li');
-      item.textContent = msg;
-      messages.appendChild(item);
-      messages.scrollTop = messages.scrollHeight;
-
-      // Save to Firestore
-      db.collection("messages").add({
-        text: msg,
-        timestamp: Date.now()
-      });
-    });
   </script>
 </body>
 </html>
