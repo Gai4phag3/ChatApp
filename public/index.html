@@ -3,11 +3,35 @@
 <head>
   <title>Chat App</title>
   <style>
-    body { font-family: Arial; padding: 20px; }
-    #messages { list-style: none; padding: 0; max-height: 300px; overflow-y: auto; border: 1px solid #ccc; margin-bottom: 10px; }
-    li { padding: 5px 10px; border-bottom: 1px solid #eee; }
-    input { width: 75%; padding: 10px; }
-    button { padding: 10px; }
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background-color: #f8f9fa;
+    }
+
+    #messages {
+      list-style: none;
+      padding: 0;
+      max-height: 300px;
+      overflow-y: auto;
+      border: 1px solid #ccc;
+      margin-bottom: 10px;
+      background: #fff;
+    }
+
+    li {
+      padding: 5px 10px;
+      border-bottom: 1px solid #eee;
+    }
+
+    input {
+      width: 75%;
+      padding: 10px;
+    }
+
+    button {
+      padding: 10px;
+    }
   </style>
 </head>
 <body>
@@ -18,27 +42,74 @@
     <button>Send</button>
   </form>
 
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.3.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.3.1/firebase-firestore.js"></script>
+
+  <script>
+    // TODO: Replace with your actual Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyCx00DmHMLmiDbfFUiBN3w5ueIxAzLqWus",
+      authDomain: "chitchat-254bc.firebaseapp.com",
+      projectId: "chitchat-254bc",
+      storageBucket: "chitchat-254bc.firebasestorage.app",
+      messagingSenderId: "7406729436",
+      appId: "1:7406729436:web:4ceec3453f658398215c19",
+      measurementId: "G-27KYMHED4V"
+    };
+
+    // Initialize Firebase and Firestore
+    const app = firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+  </script>
+
+  <!-- Socket.IO -->
   <script src="/socket.io/socket.io.js"></script>
+
+  <!-- Chat logic -->
   <script>
     const socket = io();
-
     const form = document.getElementById('form');
     const input = document.getElementById('input');
     const messages = document.getElementById('messages');
 
+    // Load previous messages from Firestore on page load
+    window.addEventListener("load", async () => {
+      const snapshot = await db.collection("messages")
+        .orderBy("timestamp", "asc")
+        .limit(50)
+        .get();
+
+      snapshot.forEach(doc => {
+        const item = document.createElement('li');
+        item.textContent = doc.data().text;
+        messages.appendChild(item);
+      });
+
+      messages.scrollTop = messages.scrollHeight;
+    });
+
+    // Send message on form submit
     form.addEventListener('submit', function(e) {
       e.preventDefault();
-      if (input.value) {
-        socket.emit('chat message', input.value);
+      if (input.value.trim()) {
+        socket.emit('chat message', input.value.trim());
         input.value = '';
       }
     });
 
+    // Receive message in real-time
     socket.on('chat message', function(msg) {
       const item = document.createElement('li');
       item.textContent = msg;
       messages.appendChild(item);
       messages.scrollTop = messages.scrollHeight;
+
+      // Save to Firestore
+      db.collection("messages").add({
+        text: msg,
+        timestamp: Date.now()
+      });
     });
   </script>
 </body>
