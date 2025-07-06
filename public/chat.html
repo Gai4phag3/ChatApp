@@ -62,17 +62,13 @@
 
     // Receive
     socket.on("chat message", (msg) => {
-      const time = new Date(msg.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      const item = document.createElement("li");
-      item.textContent = `${msg.sender} [${time}]: ${msg.text}`;
-      messages.appendChild(item);
-      messages.scrollTop = messages.scrollHeight;
+    if (!msg || !msg.text || !msg.sender) return;
 
-      db.collection("messages").add({
-        text: msg.text,
-        sender: msg.sender,
-        timestamp: Date.now()
-      });
+    const time = new Date(msg.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const item = document.createElement("li");
+    item.textContent = `${msg.sender} [${time}]: ${msg.text}`;
+    messages.appendChild(item);
+    messages.scrollTop = messages.scrollHeight;
     });
 
     function logout() {
