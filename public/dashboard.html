@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Dashboard - Chat App</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 600px;
+      margin: auto;
+      padding: 20px;
+      background: #f8f9fa;
+    }
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+    button {
+      padding: 8px 12px;
+      cursor: pointer;
+    }
+    #friendsList {
+      list-style: none;
+      padding: 0;
+    }
+    #friendsList li {
+      padding: 10px;
+      background: white;
+      margin-bottom: 8px;
+      cursor: pointer;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    #friendsList li:hover {
+      background: #e6f0ff;
+    }
+    #noFriends {
+      font-style: italic;
+      color: #777;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="top-bar">
+    <h2>Your Friends</h2>
+    <button onclick="location.href='add-friends.html'">Add Friends</button>
+  </div>
+
+  <ul id="friendsList"></ul>
+  <p id="noFriends" style="display:none;">
+    You don't have any friends yet. Find some friends by clicking the button above.
+  </p>
+
+  <script src="https://www.gstatic.com/firebasejs/10.3.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.3.1/firebase-firestore.js"></script>
+  <script src="firebase-config.js"></script>
+
+  <script>
+    const db = firebase.firestore();
+    const username = localStorage.getItem('username');
+
+    if (!username) {
+      alert('Not logged in! Redirecting to login.');
+      window.location.href = 'login.html';
+    }
+
+    async function loadFriends() {
+      const userDoc = await db.collection('users').doc(username).get();
+
+      const friendsList = document.getElementById('friendsList');
+      const noFriendsMsg = document.getElementById('noFriends');
+
+      if (!userDoc.exists) {
+        friendsList.innerHTML = '';
+        noFriendsMsg.style.display = 'block';
+        return;
+      }
+
+      const friends = userDoc.data().friends || [];
+
+      if (friends.length === 0) {
+        friendsList.innerHTML = '';
+        noFriendsMsg.style.display = 'block';
+        return;
+      }
+
+      noFriendsMsg.style.display = 'none';
+      friendsList.innerHTML = '';
+
+      friends.forEach(friend => {
+        const li = document.createElement('li');
+        li.textContent = friend;
+        li.onclick = () => {
+          // Go to chat with this friend
+          window.location.href = `chat.html?friend=${encodeURIComponent(friend)}`;
+        };
+        friendsList.appendChild(li);
+      });
+    }
+
+    loadFriends();
+  </script>
+
+</body>
+</html>

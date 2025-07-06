@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Find Friends - Chat App</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .container {
+      max-width: 600px;
+      margin: auto;
+      padding: 20px;
+    }
+    .friend {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px;
+      border-bottom: 1px solid #ccc;
+    }
+    .search-bar {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 10px;
+    }
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="top-bar">
+      <h2>Find Friends</h2>
+      <button onclick="goBack()">Back</button>
+    </div>
+    <input class="search-bar" id="search" placeholder="Search usernames..." oninput="renderUsers()" />
+    <div id="userList"></div>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/10.3.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.3.1/firebase-firestore.js"></script>
+  <script src="firebase-config.js"></script>
+
+  <script>
+    const db = firebase.firestore();
+    const currentUsername = localStorage.getItem("username");
+
+    async function fetchUsers() {
+      const usersSnapshot = await db.collection("users").get();
+      return usersSnapshot.docs.map(doc => doc.data().username).filter(u => u !== currentUsername);
+    }
+
+    async function addFriend(friendUsername) {
+      const userRef = db.collection("users").doc(currentUsername);
+      await userRef.update({
+        friends: firebase.firestore.FieldValue.arrayUnion(friendUsername)
+      });
+      alert(`Added ${friendUsername} as a friend!`);
+    }
+
+    async function renderUsers() {
+      const allUsers = await fetchUsers();
+      const searchTerm = document.getElementById("search").value.toLowerCase();
+      const filtered = allUsers.filter(u => u.toLowerCase().includes(searchTerm));
+
+      const userList = document.getElementById("userList");
+      userList.innerHTML = "";
+      filtered.forEach(username => {
+        const div = document.createElement("div");
+        div.className = "friend";
+        div.innerHTML = `
+          <span>${username}</span>
+          <button onclick="addFriend('${username}')">Add</button>
+        `;
+        userList.appendChild(div);
+      });
+    }
+
+    function goBack() {
+      window.location.href = "dashboard.html";
+    }
+
+    renderUsers();
+  </script>
+</body>
+</html>
