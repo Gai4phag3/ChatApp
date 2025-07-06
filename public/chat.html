@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Chat</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <h2>Welcome, <span id="user-display"></span>!</h2>
+    <ul id="messages"></ul>
+    <form id="form">
+      <input id="input" autocomplete="off" placeholder="Type a message..." />
+      <button>Send</button>
+    </form>
+    <button onclick="logout()">Logout</button>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="firebase-config.js"></script>
+  <script>
+    const socket = io();
+    const form = document.getElementById("form");
+    const input = document.getElementById("input");
+    const messages = document.getElementById("messages");
+
+    const username = localStorage.getItem("username");
+    if (!username) window.location.href = "login.html";
+    document.getElementById("user-display").textContent = username;
+
+    // Load previous messages
+    async function loadMessages() {
+      const snapshot = await db.collection("messages")
+        .orderBy("timestamp", "asc")
+        .limit(50)
+        .get();
+
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        const time = new Date(data.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const item = document.createElement("li");
+        item.textContent = `${data.sender} [${time}]: ${data.text}`;
+        messages.appendChild(item);
+      });
+
+      messages.scrollTop = messages.scrollHeight;
+    }
+    loadMessages();
+
+    // Send
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      if (input.value.trim()) {
+        socket.emit("chat message", {
+          text: input.value.trim(),
+          sender: username
+        });
+        input.value = "";
+      }
+    });
+
+    // Receive
+    socket.on("chat message", (msg) => {
+      const time = new Date(msg.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const item = document.createElement("li");
+      item.textContent = `${msg.sender} [${time}]: ${msg.text}`;
+      messages.appendChild(item);
+      messages.scrollTop = messages.scrollHeight;
+
+      db.collection("messages").add({
+        text: msg.text,
+        sender: msg.sender,
+        timestamp: Date.now()
+      });
+    });
+
+    function logout() {
+      localStorage.removeItem("username");
+      window.location.href = "index.html";
+    }
+  </script>
+</body>
+</html>
