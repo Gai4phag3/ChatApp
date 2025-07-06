@@ -62,13 +62,13 @@
 
     // Receive
     socket.on("chat message", (msg) => {
-    if (!msg || !msg.text || !msg.sender) return;
+        if (!msg || !msg.text || !msg.sender) return;
 
-    const time = new Date(msg.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    const item = document.createElement("li");
-    item.textContent = `${msg.sender} [${time}]: ${msg.text}`;
-    messages.appendChild(item);
-    messages.scrollTop = messages.scrollHeight;
+        const time = new Date(msg.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const item = document.createElement("li");
+        item.textContent = `${msg.sender} [${time}]: ${msg.text}`;
+        messages.appendChild(item);
+        messages.scrollTop = messages.scrollHeight;
     });
 
     function logout() {
