@@ -1,108 +1,112 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Dashboard - Chat App</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8">
+  <title>Dashboard - Friends List</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      max-width: 600px;
-      margin: auto;
       padding: 20px;
-      background: #f8f9fa;
+      background-color: #f0f2f5;
     }
-    .top-bar {
+
+    h2 {
+      text-align: center;
+    }
+
+    #friendList {
+      list-style: none;
+      padding: 0;
+      margin-top: 20px;
+      background: #fff;
+      border: 1px solid #ccc;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    #friendList li {
+      padding: 10px;
+      border-bottom: 1px solid #eee;
+    }
+
+    #topBar {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 15px;
     }
-    button {
-      padding: 8px 12px;
-      cursor: pointer;
-    }
-    #friendsList {
-      list-style: none;
-      padding: 0;
-    }
-    #friendsList li {
+
+    #addFriendBtn {
       padding: 10px;
-      background: white;
-      margin-bottom: 8px;
+      font-size: 14px;
       cursor: pointer;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-    }
-    #friendsList li:hover {
-      background: #e6f0ff;
-    }
-    #noFriends {
-      font-style: italic;
-      color: #777;
     }
   </style>
 </head>
 <body>
-
-  <div class="top-bar">
-    <h2>Your Friends</h2>
-    <button onclick="location.href='add-friends.html'">Add Friends</button>
+  <div id="topBar">
+    <h2 id="welcomeText">Welcome!</h2>
+    <button id="addFriendBtn" onclick="location.href='add-friends.html'">➕ Add Friends</button>
   </div>
 
-  <ul id="friendsList"></ul>
-  <p id="noFriends" style="display:none;">
-    You don't have any friends yet. Find some friends by clicking the button above.
-  </p>
+  <ul id="friendList"></ul>
 
-  <script src="https://www.gstatic.com/firebasejs/10.3.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.3.1/firebase-firestore.js"></script>
-  <script src="firebase-config.js"></script>
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
   <script>
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_PROJECT_ID.appspot.com",
+      messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+      appId: "YOUR_APP_ID"
+    };
+
+    firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
+  </script>
+
+  <script>
     const username = localStorage.getItem('username');
+    const welcomeText = document.getElementById('welcomeText');
+    const friendList = document.getElementById('friendList');
 
     if (!username) {
-      alert('Not logged in! Redirecting to login.');
-      window.location.href = 'login.html';
+      alert("You're not logged in.");
+      window.location.href = "login.html";
+    } else {
+      welcomeText.textContent = `Welcome, ${username}`;
+      loadFriends();
     }
 
     async function loadFriends() {
-      const userDoc = await db.collection('users').doc(username).get();
+      try {
+        const userDoc = await db.collection('users').doc(username).get();
+        if (!userDoc.exists) {
+          friendList.innerHTML = "<li>User not found in database</li>";
+          return;
+        }
 
-      const friendsList = document.getElementById('friendsList');
-      const noFriendsMsg = document.getElementById('noFriends');
+        const friends = userDoc.data().friends || [];
 
-      if (!userDoc.exists) {
-        friendsList.innerHTML = '';
-        noFriendsMsg.style.display = 'block';
-        return;
+        if (friends.length === 0) {
+          friendList.innerHTML = "<li>You have no friends yet. Click ➕ Add Friends to get started!</li>";
+          return;
+        }
+
+        friendList.innerHTML = '';
+        friends.forEach(friend => {
+          const li = document.createElement('li');
+          li.textContent = friend;
+          friendList.appendChild(li);
+        });
+      } catch (err) {
+        console.error("Error loading friends:", err);
+        friendList.innerHTML = "<li>Something went wrong loading friends.</li>";
       }
-
-      const friends = userDoc.data().friends || [];
-
-      if (friends.length === 0) {
-        friendsList.innerHTML = '';
-        noFriendsMsg.style.display = 'block';
-        return;
-      }
-
-      noFriendsMsg.style.display = 'none';
-      friendsList.innerHTML = '';
-
-      friends.forEach(friend => {
-        const li = document.createElement('li');
-        li.textContent = friend;
-        li.onclick = () => {
-          // Go to chat with this friend
-          window.location.href = `chat.html?friend=${encodeURIComponent(friend)}`;
-        };
-        friendsList.appendChild(li);
-      });
     }
-
-    loadFriends();
   </script>
-
 </body>
 </html>
