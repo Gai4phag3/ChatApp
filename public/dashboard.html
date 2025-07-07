@@ -27,6 +27,11 @@
     #friendList li {
       padding: 10px;
       border-bottom: 1px solid #eee;
+      cursor: pointer;
+    }
+
+    #friendList li:hover {
+      background-color: #f9f9f9;
     }
 
     #topBar {
@@ -51,17 +56,17 @@
   <ul id="friendList"></ul>
 
   <!-- Firebase -->
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
   <script>
     const firebaseConfig = {
-    apiKey: "AIzaSyCx00DmHMLmiDbfFUiBN3w5ueIxAzLqWus",
-    authDomain: "chitchat-254bc.firebaseapp.com",
-    projectId: "chitchat-254bc",
-    storageBucket: "chitchat-254bc.appspot.com",
-    messagingSenderId: "7406729436",
-    appId: "1:7406729436:web:4ceec3453f658398215c19"
+      apiKey: "AIzaSyCx00DmHMLmiDbfFUiBN3w5ueIxAzLqWus",
+      authDomain: "chitchat-254bc.firebaseapp.com",
+      projectId: "chitchat-254bc",
+      storageBucket: "chitchat-254bc.appspot.com",
+      messagingSenderId: "7406729436",
+      appId: "1:7406729436:web:4ceec3453f658398215c19"
     };
 
     firebase.initializeApp(firebaseConfig);
@@ -100,6 +105,10 @@
         friends.forEach(friend => {
           const li = document.createElement('li');
           li.textContent = friend;
+          li.onclick = () => {
+            localStorage.setItem('chatWith', friend);
+            window.location.href = 'chat.html';
+          };
           friendList.appendChild(li);
         });
       } catch (err) {

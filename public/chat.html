@@ -6,19 +6,23 @@
 </head>
 <body>
   <div class="container">
-    <h2>Welcome, <span id="user-display"></span>!</h2>
+    <h2>Chat between <span id="user-display"></span> and <span id="chat-with"></span></h2>
     <ul id="messages"></ul>
     <form id="form">
       <input id="input" autocomplete="off" placeholder="Type a message..." />
-      <button>Send</button>
+      <button type="submit">Send</button>
     </form>
     <button onclick="logout()">Logout</button>
   </div>
 
+  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+  <!-- Socket.io -->
   <script src="/socket.io/socket.io.js"></script>
+  <!-- Your Firebase config -->
   <script src="firebase-config.js"></script>
+
   <script>
     const socket = io();
     const form = document.getElementById("form");
@@ -26,53 +30,86 @@
     const messages = document.getElementById("messages");
 
     const username = localStorage.getItem("username");
-    if (!username) window.location.href = "login.html";
-    document.getElementById("user-display").textContent = username;
+    const chatWith = localStorage.getItem("chatWith");
 
-    // Load previous messages
-    async function loadMessages() {
-      const snapshot = await db.collection("messages")
-        .orderBy("timestamp", "asc")
-        .limit(50)
-        .get();
-
-      snapshot.forEach(doc => {
-        const data = doc.data();
-        const time = new Date(data.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        const item = document.createElement("li");
-        item.textContent = `${data.sender} [${time}]: ${data.text}`;
-        messages.appendChild(item);
-      });
-
-      messages.scrollTop = messages.scrollHeight;
+    if (!username || !chatWith) {
+      alert("Missing user or chat partner.");
+      window.location.href = "dashboard.html";
     }
+
+    document.getElementById("user-display").textContent = username;
+    document.getElementById("chat-with").textContent = chatWith;
+
+    const db = firebase.firestore();
+    const chatId = [username, chatWith].sort().join('_');  // Ensures same ID for both users
+
+    // Load previous messages from Firestore
+    async function loadMessages() {
+      try {
+        const snapshot = await db.collection("chats")
+          .doc(chatId)
+          .collection("messages")
+          .orderBy("timestamp", "asc")
+          .limit(100)
+          .get();
+
+        snapshot.forEach(doc => {
+          const data = doc.data();
+          addMessageToUI(data.sender, data.text, data.timestamp);
+        });
+
+        messages.scrollTop = messages.scrollHeight;
+      } catch (error) {
+        console.error("Error loading chat:", error);
+      }
+    }
+
     loadMessages();
 
-    // Send
+    // Helper: format + append message
+    function addMessageToUI(sender, text, timestamp) {
+      const time = new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const item = document.createElement("li");
+      item.textContent = `${sender} [${time}]: ${text}`;
+      messages.appendChild(item);
+    }
+
+    // Send message
     form.addEventListener("submit", (e) => {
       e.preventDefault();
-      if (input.value.trim()) {
-        socket.emit("chat message", {
-          text: input.value.trim(),
-          sender: username
-        });
-        input.value = "";
-      }
+      const text = input.value.trim();
+      if (!text) return;
+
+      const messageData = {
+        sender: username,
+        text: text,
+        timestamp: Date.now(),
+        chatId: chatId
+      };
+
+      // Emit to server
+      socket.emit("chat message", messageData);
+
+      // Save to Firestore
+      db.collection("chats")
+        .doc(chatId)
+        .collection("messages")
+        .add(messageData);
+
+      input.value = "";
     });
 
-    // Receive
+    // Listen for messages from server
     socket.on("chat message", (msg) => {
-        if (!msg || !msg.text || !msg.sender) return;
+      if (!msg || !msg.text || !msg.sender || msg.chatId !== chatId) return;
 
-        const time = new Date(msg.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        const item = document.createElement("li");
-        item.textContent = `${msg.sender} [${time}]: ${msg.text}`;
-        messages.appendChild(item);
-        messages.scrollTop = messages.scrollHeight;
+      addMessageToUI(msg.sender, msg.text, msg.timestamp || Date.now());
+      messages.scrollTop = messages.scrollHeight;
     });
 
     function logout() {
       localStorage.removeItem("username");
+      localStorage.removeItem("chatWith");
       window.location.href = "index.html";
     }
   </script>
