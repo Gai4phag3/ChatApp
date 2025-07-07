@@ -1,34 +1,33 @@
-const loginForm = document.getElementById('loginForm');
-loginForm.addEventListener('submit', async (e) => {
-  e.preventDefault();
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Login</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <h2>Login</h2>
+    <input type="text" id="username" placeholder="Username">
+    <input type="password" id="password" placeholder="Password">
+    <button onclick="login()">Login</button>
+    <p>Don't have an account? <a href="signup.html">Sign Up</a></p>
+  </div>
 
-  const username = document.getElementById('username').value.trim();
-  const password = document.getElementById('password').value.trim();
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+  <script src="firebase-config.js"></script>
+  <script>
+    async function login() {
+      const username = document.getElementById("username").value.trim();
+      const password = document.getElementById("password").value;
 
-  if (!username || !password) {
-    alert('Please enter username and password');
-    return;
-  }
+      const doc = await db.collection("users").doc(username).get();
+      if (!doc.exists) return alert("User not found.");
+      if (doc.data().password !== password) return alert("Incorrect password.");
 
-  try {
-    const userDoc = await db.collection('users').doc(username).get();
-    if (!userDoc.exists) {
-      alert('No such user found');
-      return;
+      localStorage.setItem("username", username);
+      window.location.href = "dashboard.html";
     }
-
-    const userData = userDoc.data();
-    if (userData.password !== password) {
-      alert('Incorrect password');
-      return;
-    }
-
-    // Login success: store username and redirect
-    localStorage.setItem('username', username);
-    window.location.href = 'dashboard.html';
-
-  } catch (error) {
-    console.error('Login error:', error);
-    alert('Login error, try again');
-  }
-});
+  </script>
+</body>
+</html>
