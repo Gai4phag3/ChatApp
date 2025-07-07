@@ -55,12 +55,12 @@
   <!-- Firebase Config -->
   <script>
     const firebaseConfig = {
-    apiKey: "AIzaSyCx00DmHMLmiDbfFUiBN3w5ueIxAzLqWus",
-    authDomain: "chitchat-254bc.firebaseapp.com",
-    projectId: "chitchat-254bc",
-    storageBucket: "chitchat-254bc.appspot.com",
-    messagingSenderId: "7406729436",
-    appId: "1:7406729436:web:4ceec3453f658398215c19"
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_AUTH_DOMAIN",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_STORAGE_BUCKET",
+      messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+      appId: "YOUR_APP_ID"
     };
 
     firebase.initializeApp(firebaseConfig);
@@ -70,35 +70,45 @@
   <!-- Main Friend Logic -->
   <script>
     const currentUsername = localStorage.getItem("username");
-    let currentFriends = [];
+    if (!currentUsername) {
+      alert("You're not logged in!");
+      window.location.href = "login.html";
+    }
 
     const searchInput = document.getElementById("search");
     const userList = document.getElementById("userList");
+    let currentFriends = [];
 
     async function loadFriendsAndUsers() {
-      const userDoc = await db.collection("users").doc(currentUsername).get();
-      if (!userDoc.exists) {
-        alert("Current user not found.");
-        return;
-      }
+      try {
+        const userDoc = await db.collection("users").doc(currentUsername).get();
 
-      currentFriends = userDoc.data().friends || [];
-
-      const snapshot = await db.collection("users").get();
-      const allUsers = [];
-
-      snapshot.forEach(doc => {
-        const data = doc.data();
-        const username = data.username;
-        if (
-          username !== currentUsername &&
-          !currentFriends.includes(username)
-        ) {
-          allUsers.push(username);
+        if (!userDoc.exists) {
+          alert("Current user not found.");
+          return;
         }
-      });
 
-      renderUserList(allUsers);
+        currentFriends = userDoc.data().friends || [];
+
+        const snapshot = await db.collection("users").get();
+        const allUsers = [];
+
+        snapshot.forEach(doc => {
+          const username = doc.id; // Use document ID
+          if (
+            username !== currentUsername &&
+            !currentFriends.includes(username)
+          ) {
+            allUsers.push(username);
+          }
+        });
+
+        console.log("Filtered users:", allUsers);
+        renderUserList(allUsers);
+      } catch (error) {
+        console.error("Error loading users:", error);
+        alert("Something went wrong loading the user list.");
+      }
     }
 
     function renderUserList(usernames) {
@@ -126,12 +136,17 @@
     }
 
     async function addFriend(friendUsername) {
-      const userRef = db.collection("users").doc(currentUsername);
-      await userRef.update({
-        friends: firebase.firestore.FieldValue.arrayUnion(friendUsername)
-      });
+      try {
+        const userRef = db.collection("users").doc(currentUsername);
+        await userRef.update({
+          friends: firebase.firestore.FieldValue.arrayUnion(friendUsername)
+        });
 
-      await loadFriendsAndUsers(); // Refresh list after adding
+        await loadFriendsAndUsers(); // Refresh list
+      } catch (error) {
+        console.error("Error adding friend:", error);
+        alert("Couldn't add friend.");
+      }
     }
 
     searchInput.addEventListener("input", loadFriendsAndUsers);
