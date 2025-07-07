@@ -40,7 +40,6 @@
     document.getElementById("user-display").textContent = username;
     document.getElementById("chat-with").textContent = chatWith;
 
-    const db = firebase.firestore();
     const chatId = [username, chatWith].sort().join('_');  // Ensures same ID for both users
 
     // Load previous messages from Firestore
