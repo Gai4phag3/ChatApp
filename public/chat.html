@@ -1,11 +1,36 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <style>
+  .top-bar {
+    display: flex;
+    justify-content: flex-start;
+    margin: 10px 20px;
+  }
+
+  .back-button {
+    padding: 8px 16px;
+    font-size: 14px;
+    background-color: #3498db;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+
+  .back-button:hover {
+    background-color: #2980b9;
+  }
+</style>
   <title>Chat</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <div class="container">
+    <div class="top-bar">
+      <button onclick="goToDashboard()" class="back-button">⬅ Back to Dashboard</button>
+    </div>
     <h2>Chat between <span id="user-display"></span> and <span id="chat-with"></span></h2>
     <ul id="messages"></ul>
     <form id="form">
@@ -68,11 +93,18 @@
     // Helper: format + append message
     function addMessageToUI(sender, text, timestamp) {
       const time = new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      const item = document.createElement("li");
-      item.textContent = `${sender} [${time}]: ${text}`;
-      messages.appendChild(item);
-    }
 
+      const li = document.createElement("li");
+      li.className = `message ${sender === username ? "self" : "other"}`;
+
+      li.innerHTML = `
+        <div class="sender">${sender}</div>
+        <div class="text">${text}</div>
+        <div class="time">${time}</div>
+      `;
+
+      messages.appendChild(li);
+    }
     // Send message
     form.addEventListener("submit", (e) => {
       e.preventDefault();
