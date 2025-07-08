@@ -2,7 +2,7 @@
 <html>
 <head>
   <title>Sign Up</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div class="container">
@@ -35,12 +35,14 @@
           return;
         }
 
+        // Save user data: username is the document ID, but store the display name inside
         await db.collection("users").doc(username).set({
-          name,
-          password,
-          friends: []
+          name: name,
+          password: password,
+          friends: []  // initialize empty friends list
         });
 
+        // Save username and name locally for later use (optional)
         localStorage.setItem("username", username);
         localStorage.setItem("name", name);
 

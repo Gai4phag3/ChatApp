@@ -1,46 +1,23 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>Add Friends</title>
-  <link rel="stylesheet" href="style.css" />
-  <style>
-    #userList li {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 12px 18px;
-      border-bottom: 1px solid var(--border);
-      cursor: default;
-      transition: background-color 0.2s;
-    }
-    #userList li:hover {
-      background-color: var(--hover);
-    }
-    #userList button {
-      padding: 5px 10px;
-      font-size: 14px;
-      border-radius: 20px;
-      border: none;
-      background-color: #3498db;
-      color: white;
-      cursor: pointer;
-    }
-    #userList button:hover {
-      background-color: #2980b9;
-    }
-  </style>
+  <link rel="stylesheet" href="friends.css">
 </head>
 <body>
-  <div class="container">
-    <h2>Add Friends</h2>
-    <input type="text" id="search" placeholder="Search usernames or names..." />
-    <ul id="userList"></ul>
-  </div>
+  <h2>Add Friends</h2>
+  <input type="text" id="search" placeholder="Search usernames..." />
+  <ul id="userList"></ul>
 
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-  <script src="firebase-config.js"></script>
+  <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+
+  <!-- Firebase Config -->
+    <script src="firebase-config.js"></script>
+  <!-- Main Friend Logic -->
   <script>
     const currentUsername = localStorage.getItem("username");
     if (!currentUsername) {
@@ -51,11 +28,11 @@
     const searchInput = document.getElementById("search");
     const userList = document.getElementById("userList");
     let currentFriends = [];
-    let allUsers = [];
 
     async function loadFriendsAndUsers() {
       try {
         const userDoc = await db.collection("users").doc(currentUsername).get();
+
         if (!userDoc.exists) {
           alert("Current user not found.");
           return;
@@ -64,53 +41,66 @@
         currentFriends = userDoc.data().friends || [];
 
         const snapshot = await db.collection("users").get();
-        allUsers = [];
+        const allUsers = [];
 
         snapshot.forEach(doc => {
-          const username = doc.id;
-          if (username !== currentUsername && !currentFriends.includes(username)) {
-            allUsers.push({
-    displayUsers(allUsers);
-  } catch (err) {
-    console.error(err);
-    alert("Failed to load users.");
-  }
-}
+          const username = doc.id; // Use document ID
+          if (
+            username !== currentUsername &&
+            !currentFriends.includes(username)
+          ) {
+            allUsers.push(username);
+          }
+        });
 
-function displayUsers(users) {
-  userList.innerHTML = "";
-  users.forEach(user => {
-    const li = document.createElement("li");
-    li.innerHTML = `
-      <div>
-        <strong>${user.name}</strong><br><small>@${user.username}</small>
-      </div>
-      <button onclick="addFriend('${user.username}')">Add</button>
-    `;
-    userList.appendChild(li);
-  });
-}
+        console.log("Filtered users:", allUsers);
+        renderUserList(allUsers);
+      } catch (error) {
+        console.error("Error loading users:", error);
+        alert("Something went wrong loading the user list.");
+      }
+    }
 
-async function addFriend(friendUsername) {
-  try {
-    await db.collection("users").doc(currentUsername).update({
-      friends: firebase.firestore.FieldValue.arrayUnion(friendUsername)
-    });
-    alert("Friend added!");
-    loadFriendsAndUsers();
-  } catch (err) {
-    console.error(err);
-    alert("Failed to add friend.");
-  }
-}
+    function renderUserList(usernames) {
+      userList.innerHTML = '';
 
-searchInput.addEventListener("input", () => {
-  const query = searchInput.value.toLowerCase();
-  const filtered = allUsers.filter(user =>
-    user.name.toLowerCase().includes(query) ||
-    user.username.toLowerCase().includes(query)
-  );
-  displayUsers(filtered);
-});
+      const query = searchInput.value.trim().toLowerCase();
+      const filtered = usernames.filter(name => name.toLowerCase().includes(query));
 
-loadFriendsAndUsers();
+      if (filtered.length === 0) {
+        userList.innerHTML = '<li>No users found</li>';
+        return;
+      }
+
+      filtered.forEach(username => {
+        const li = document.createElement("li");
+        li.textContent = username;
+
+        const addBtn = document.createElement("button");
+        addBtn.textContent = "Add";
+        addBtn.onclick = () => addFriend(username);
+
+        li.appendChild(addBtn);
+        userList.appendChild(li);
+      });
+    }
+
+    async function addFriend(friendUsername) {
+      try {
+        const userRef = db.collection("users").doc(currentUsername);
+        await userRef.update({
+          friends: firebase.firestore.FieldValue.arrayUnion(friendUsername)
+        });
+
+        await loadFriendsAndUsers(); // Refresh list
+      } catch (error) {
+        console.error("Error adding friend:", error);
+        alert("Couldn't add friend.");
+      }
+    }
+
+    searchInput.addEventListener("input", loadFriendsAndUsers);
+    window.addEventListener("load", loadFriendsAndUsers);
+  </script>
+</body>
+</html>
