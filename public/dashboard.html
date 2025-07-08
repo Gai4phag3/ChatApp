@@ -7,7 +7,9 @@
 </head>
 <body>
   <div class="container">
-    <h2 id="welcomeText">Welcome!</h2>
+    <h2 id="welcomeText">Welcome, <span id="displayName"></span>!</h2>
+    <p style="text-align: center; font-size: 14px; color: #666;">@<span id="usernameDisplay"></span></p>
+
     <button id="settingsBtn" onclick="openSettings()">⚙️</button>
     <button id="addFriendBtn" onclick="location.href='add-friends.html'">➕ Add Friends</button>
     <ul id="friendList"></ul>
@@ -29,6 +31,12 @@
 
   <script>
     const username = localStorage.getItem('username');
+    const name = localStorage.getItem('name');
+
+    document.getElementById("usernameDisplay").textContent = username;
+    document.getElementById("displayName").textContent = name || username;
+
+    
     const welcomeText = document.getElementById('welcomeText');
     const friendList = document.getElementById('friendList');
 

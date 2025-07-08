@@ -1,50 +1,130 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <style>
-  .top-bar {
-    display: flex;
-    justify-content: flex-start;
-    margin: 10px 20px;
-  }
-
-  .back-button {
-    padding: 8px 16px;
-    font-size: 14px;
-    background-color: #3498db;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: background-color 0.2s;
-  }
-
-  .back-button:hover {
-    background-color: #2980b9;
-  }
-</style>
+  <meta charset="UTF-8" />
   <title>Chat</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link rel="stylesheet" href="styles.css">
+  <style>
+    .top-bar {
+      display: flex;
+      justify-content: flex-start;
+      margin: 10px 20px;
+    }
+
+    .back-button {
+      padding: 8px 16px;
+      font-size: 14px;
+      background-color: #3498db;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    .back-button:hover {
+      background-color: #2980b9;
+    }
+
+    #messages {
+      list-style-type: none;
+      padding: 0;
+      max-height: 400px;
+      overflow-y: auto;
+      margin-bottom: 20px;
+    }
+
+    .message {
+      padding: 8px 12px;
+      margin: 6px;
+      border-radius: 8px;
+      max-width: 70%;
+    }
+
+    .self {
+      background-color: #d1f7c4;
+      align-self: flex-end;
+      text-align: right;
+    }
+
+    .other {
+      background-color: #f1f0f0;
+      text-align: left;
+    }
+
+    .sender {
+      font-weight: bold;
+      font-size: 12px;
+    }
+
+    .text {
+      font-size: 14px;
+      margin: 4px 0;
+    }
+
+    .time {
+      font-size: 11px;
+      color: #777;
+    }
+
+    form {
+      display: flex;
+      gap: 10px;
+    }
+
+    #input {
+      flex-grow: 1;
+      padding: 10px;
+      font-size: 14px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+    }
+
+    button[type="submit"] {
+      padding: 10px 16px;
+      font-size: 14px;
+      background-color: #2ecc71;
+      border: none;
+      color: white;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    button[type="submit"]:hover {
+      background-color: #27ae60;
+    }
+  </style>
 </head>
 <body>
   <div class="container">
     <div class="top-bar">
       <button onclick="goToDashboard()" class="back-button">⬅ Back to Dashboard</button>
     </div>
-    <h2>Chat between <span id="user-display"></span> and <span id="chat-with"></span></h2>
+
+    <h2>
+      <span id="user-display"></span><br>
+      <small style="font-size: 14px; color: #555;">(@<span id="username-display"></span>)</small><br>
+      chatting with <span id="chat-with"></span>
+    </h2>
+
     <ul id="messages"></ul>
+
     <form id="form">
       <input id="input" autocomplete="off" placeholder="Type a message..." />
       <button type="submit">Send</button>
     </form>
-    <button onclick="logout()">Logout</button>
+
+    <button onclick="logout()" style="margin-top: 20px;">Logout</button>
   </div>
 
   <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+  
   <!-- Socket.io -->
   <script src="/socket.io/socket.io.js"></script>
+
   <!-- Your Firebase config -->
   <script src="firebase-config.js"></script>
 
@@ -63,14 +143,18 @@
     }
 
     document.getElementById("user-display").textContent = username;
+    document.getElementById("username-display").textContent = username;
     document.getElementById("chat-with").textContent = chatWith;
 
-    const chatId = [username, chatWith].sort().join('_');  // Ensures same ID for both users
+    const chatId = [username, chatWith].sort().join('_');
 
-    // Load previous messages from Firestore
+    const db = firebase.firestore();
+
+    // Load previous messages
     async function loadMessages() {
       try {
-        const snapshot = await db.collection("chats")
+        const snapshot = await db
+          .collection("chats")
           .doc(chatId)
           .collection("messages")
           .orderBy("timestamp", "asc")
@@ -90,22 +174,22 @@
 
     loadMessages();
 
-    // Helper: format + append message
     function addMessageToUI(sender, text, timestamp) {
-      const time = new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const time = new Date(timestamp).toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit'
+      });
 
       const li = document.createElement("li");
       li.className = `message ${sender === username ? "self" : "other"}`;
-
       li.innerHTML = `
         <div class="sender">${sender}</div>
         <div class="text">${text}</div>
         <div class="time">${time}</div>
       `;
-
       messages.appendChild(li);
     }
-    // Send message
+
     form.addEventListener("submit", (e) => {
       e.preventDefault();
       const text = input.value.trim();
@@ -118,10 +202,8 @@
         chatId: chatId
       };
 
-      // Emit to server
       socket.emit("chat message", messageData);
 
-      // Save to Firestore
       db.collection("chats")
         .doc(chatId)
         .collection("messages")
@@ -130,10 +212,8 @@
       input.value = "";
     });
 
-    // Listen for messages from server
     socket.on("chat message", (msg) => {
       if (!msg || !msg.text || !msg.sender || msg.chatId !== chatId) return;
-
       addMessageToUI(msg.sender, msg.text, msg.timestamp || Date.now());
       messages.scrollTop = messages.scrollHeight;
     });
@@ -143,10 +223,11 @@
       localStorage.removeItem("chatWith");
       window.location.href = "index.html";
     }
+
     function goToDashboard() {
       localStorage.removeItem("chatWith");
       window.location.href = "dashboard.html";
-   }
+    }
   </script>
 </body>
 </html>
