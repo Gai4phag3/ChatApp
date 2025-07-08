@@ -1,43 +1,112 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <style>
-  .top-bar {
-    display: flex;
-    justify-content: flex-start;
-    margin: 10px 20px;
-  }
-
-  .back-button {
-    padding: 8px 16px;
-    font-size: 14px;
-    background-color: #3498db;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: background-color 0.2s;
-  }
-
-  .back-button:hover {
-    background-color: #2980b9;
-  }
-</style>
   <title>Chat</title>
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .top-bar {
+      display: flex;
+      justify-content: flex-start;
+      margin: 10px 20px;
+    }
+
+    .back-button {
+      padding: 8px 16px;
+      font-size: 14px;
+      background-color: #3498db;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    .back-button:hover {
+      background-color: #2980b9;
+    }
+
+    #messages {
+      list-style: none;
+      padding: 0;
+      max-height: 400px;
+      overflow-y: auto;
+      margin-bottom: 20px;
+    }
+
+    .message {
+      padding: 10px;
+      margin: 10px;
+      border-radius: 8px;
+      max-width: 75%;
+      word-wrap: break-word;
+    }
+
+    .self {
+      background-color: #d1e7ff;
+      margin-left: auto;
+      text-align: right;
+    }
+
+    .other {
+      background-color: #f1f1f1;
+      margin-right: auto;
+      text-align: left;
+    }
+
+    .sender {
+      font-weight: bold;
+    }
+
+    .time {
+      font-size: 0.8em;
+      color: gray;
+    }
+
+    form {
+      display: flex;
+      gap: 10px;
+    }
+
+    #input {
+      flex-grow: 1;
+      padding: 10px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      padding: 10px 16px;
+      border: none;
+      border-radius: 6px;
+      background-color: #3498db;
+      color: white;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #2980b9;
+    }
+  </style>
 </head>
 <body>
   <div class="container">
     <div class="top-bar">
       <button onclick="goToDashboard()" class="back-button">⬅ Back to Dashboard</button>
     </div>
-    <h2>Chat between <span id="user-display"></span> and <span id="chat-with"></span></h2>
+
+    <h2>
+      Chat between <span id="you-name"></span> (<span id="you-username"></span>) and 
+      <span id="other-name"></span> (<span id="other-username"></span>)
+    </h2>
+
     <ul id="messages"></ul>
+
     <form id="form">
       <input id="input" autocomplete="off" placeholder="Type a message..." />
       <button type="submit">Send</button>
     </form>
-    <button onclick="logout()">Logout</button>
+
+    <button onclick="logout()" style="margin-top: 10px;">Logout</button>
   </div>
 
   <!-- Firebase -->
@@ -45,7 +114,7 @@
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
   <!-- Socket.io -->
   <script src="/socket.io/socket.io.js"></script>
-  <!-- Your Firebase config -->
+  <!-- Firebase config -->
   <script src="firebase-config.js"></script>
 
   <script>
@@ -55,19 +124,22 @@
     const messages = document.getElementById("messages");
 
     const username = localStorage.getItem("username");
+    const name = localStorage.getItem("name");
     const chatWith = localStorage.getItem("chatWith");
+    const chatWithName = localStorage.getItem("chatWithName");
 
     if (!username || !chatWith) {
       alert("Missing user or chat partner.");
       window.location.href = "dashboard.html";
     }
 
-    document.getElementById("user-display").textContent = username;
-    document.getElementById("chat-with").textContent = chatWith;
+    document.getElementById("you-name").textContent = name || username;
+    document.getElementById("you-username").textContent = "@" + username;
+    document.getElementById("other-name").textContent = chatWithName || chatWith;
+    document.getElementById("other-username").textContent = "@" + chatWith;
 
-    const chatId = [username, chatWith].sort().join('_');  // Ensures same ID for both users
+    const chatId = [username, chatWith].sort().join("_");
 
-    // Load previous messages from Firestore
     async function loadMessages() {
       try {
         const snapshot = await db.collection("chats")
@@ -90,22 +162,22 @@
 
     loadMessages();
 
-    // Helper: format + append message
     function addMessageToUI(sender, text, timestamp) {
-      const time = new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const time = new Date(timestamp).toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit'
+      });
 
       const li = document.createElement("li");
       li.className = `message ${sender === username ? "self" : "other"}`;
-
       li.innerHTML = `
-        <div class="sender">${sender}</div>
+        <div class="sender">${sender === username ? "You" : "@" + sender}</div>
         <div class="text">${text}</div>
         <div class="time">${time}</div>
       `;
-
       messages.appendChild(li);
     }
-    // Send message
+
     form.addEventListener("submit", (e) => {
       e.preventDefault();
       const text = input.value.trim();
@@ -118,10 +190,8 @@
         chatId: chatId
       };
 
-      // Emit to server
       socket.emit("chat message", messageData);
 
-      // Save to Firestore
       db.collection("chats")
         .doc(chatId)
         .collection("messages")
@@ -130,7 +200,6 @@
       input.value = "";
     });
 
-    // Listen for messages from server
     socket.on("chat message", (msg) => {
       if (!msg || !msg.text || !msg.sender || msg.chatId !== chatId) return;
 
@@ -140,13 +209,17 @@
 
     function logout() {
       localStorage.removeItem("username");
+      localStorage.removeItem("name");
       localStorage.removeItem("chatWith");
+      localStorage.removeItem("chatWithName");
       window.location.href = "index.html";
     }
+
     function goToDashboard() {
       localStorage.removeItem("chatWith");
+      localStorage.removeItem("chatWithName");
       window.location.href = "dashboard.html";
-   }
+    }
   </script>
 </body>
 </html>

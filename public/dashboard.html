@@ -1,48 +1,83 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Dashboard - Friends List</title>
-  <link rel="stylesheet" href="stylesdashboard.css">
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    /* Position Add Friends and Settings buttons top right/left */
+    #addFriendBtn, #settingsBtn {
+      position: absolute;
+      top: 20px;
+      padding: 8px 14px;
+      font-size: 14px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      color: white;
+    }
+    #addFriendBtn {
+      right: 20px;
+      background-color: #3498db;
+    }
+    #addFriendBtn:hover {
+      background-color: #2980b9;
+    }
+    #settingsBtn {
+      left: 20px;
+      background-color: #555;
+    }
+    #settingsBtn:hover {
+      background-color: #333;
+    }
+  </style>
 </head>
 <body>
-  <div class="container">
-    <h2 id="welcomeText">Welcome!</h2>
-    <button id="settingsBtn" onclick="openSettings()">⚙️</button>
+  <div class="container" style="position:relative;">
+    <h2>Welcome, <span id="displayName"></span>!</h2>
+
+    <button id="settingsBtn">⚙️ Settings</button>
     <button id="addFriendBtn" onclick="location.href='add-friends.html'">➕ Add Friends</button>
+
     <ul id="friendList"></ul>
   </div>
 
   <!-- Settings Modal -->
-  <div id="overlay" onclick="closeSettings()"></div>
-  <div id="settingsModal">
+  <div id="settingsModal" style="display:none;">
     <h3>Settings</h3>
-    <button onclick="toggleTheme()">🌓 Toggle Theme</button>
-    <button onclick="deleteAccount()">❌ Delete Account</button>
-    <button onclick="closeSettings()">Close</button>
+    <button id="toggleThemeBtn">Toggle Light/Dark Mode</button>
+    <button id="deleteAccountBtn" style="margin-top:10px; background-color:#e74c3c; color:white;">Delete Account</button>
+    <button onclick="closeSettings()" style="margin-top:10px;">Close</button>
   </div>
+  <div id="overlay" style="display:none;"></div>
 
-  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   <script src="firebase-config.js"></script>
 
   <script>
-    const username = localStorage.getItem('username');
-    const welcomeText = document.getElementById('welcomeText');
-    const friendList = document.getElementById('friendList');
+    const username = localStorage.getItem("username");
+    const name = localStorage.getItem("name");
+    const friendList = document.getElementById("friendList");
+    const displayName = document.getElementById("displayName");
+    const settingsBtn = document.getElementById("settingsBtn");
+    const settingsModal = document.getElementById("settingsModal");
+    const overlay = document.getElementById("overlay");
+    const toggleThemeBtn = document.getElementById("toggleThemeBtn");
+    const deleteAccountBtn = document.getElementById("deleteAccountBtn");
 
     if (!username) {
       alert("You're not logged in.");
       window.location.href = "login.html";
     } else {
-      welcomeText.textContent = `Welcome, ${username}`;
+      displayName.textContent = name || username;
       loadFriends();
     }
 
     async function loadFriends() {
       try {
-        const userDoc = await db.collection('users').doc(username).get();
+        const userDoc = await db.collection("users").doc(username).get();
         if (!userDoc.exists) {
           friendList.innerHTML = "<li>User not found in database</li>";
           return;
@@ -55,59 +90,67 @@
           return;
         }
 
-        friendList.innerHTML = '';
-        friends.forEach(friend => {
-          const li = document.createElement('li');
-          li.textContent = friend;
+        friendList.innerHTML = "";
+        for (const friendUsername of friends) {
+          const friendDoc = await db.collection("users").doc(friendUsername).get();
+          if (!friendDoc.exists) continue;
+          const friendData = friendDoc.data();
+
+          const li = document.createElement("li");
+          li.innerHTML = `<strong>${friendData.name}</strong><br><small>@${friendUsername}</small>`;
+          li.style.cursor = "pointer";
           li.onclick = () => {
-            localStorage.setItem('chatWith', friend);
-            window.location.href = 'chat.html';
+            localStorage.setItem("chatWith", friendUsername);
+            localStorage.setItem("chatWithName", friendData.name);
+            window.location.href = "chat.html";
           };
           friendList.appendChild(li);
-        });
+        }
       } catch (err) {
         console.error("Error loading friends:", err);
         friendList.innerHTML = "<li>Something went wrong loading friends.</li>";
       }
     }
 
-    // Theme Toggle
-    function toggleTheme() {
-      document.body.classList.toggle('dark');
-      localStorage.setItem('theme', document.body.classList.contains('dark') ? 'dark' : 'light');
-    }
+    // Settings modal handlers
+    settingsBtn.onclick = () => {
+      settingsModal.style.display = "block";
+      overlay.style.display = "block";
+    };
 
-    window.addEventListener('DOMContentLoaded', () => {
-      if (localStorage.getItem('theme') === 'dark') {
-        document.body.classList.add('dark');
-      }
-    });
-
-    // Modal functions
-    function openSettings() {
-      document.getElementById("overlay").style.display = "block";
-      document.getElementById("settingsModal").style.display = "block";
-    }
+    overlay.onclick = closeSettings;
 
     function closeSettings() {
-      document.getElementById("overlay").style.display = "none";
-      document.getElementById("settingsModal").style.display = "none";
+      settingsModal.style.display = "none";
+      overlay.style.display = "none";
     }
 
-    async function deleteAccount() {
-      const confirmDelete = confirm("Are you sure you want to delete your account?");
-      if (!confirmDelete) return;
+    toggleThemeBtn.onclick = () => {
+      document.body.classList.toggle("dark");
+      closeSettings();
+      // Optionally save preference in localStorage
+      localStorage.setItem("darkMode", document.body.classList.contains("dark"));
+    };
 
+    deleteAccountBtn.onclick = async () => {
+      if (!confirm("Are you sure you want to delete your account? This action cannot be undone.")) return;
       try {
         await db.collection("users").doc(username).delete();
-        localStorage.clear();
         alert("Account deleted.");
+        localStorage.clear();
         window.location.href = "signup.html";
       } catch (err) {
-        alert("Error deleting account.");
+        alert("Failed to delete account.");
         console.error(err);
       }
-    }
+    };
+
+    // On page load: apply saved theme
+    window.onload = () => {
+      if (localStorage.getItem("darkMode") === "true") {
+        document.body.classList.add("dark");
+      }
+    };
   </script>
 </body>
 </html>

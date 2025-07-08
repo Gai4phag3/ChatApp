@@ -2,13 +2,14 @@
 <html>
 <head>
   <title>Sign Up</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div class="container">
     <h2>Sign Up</h2>
-    <input type="text" id="username" placeholder="Username">
-    <input type="password" id="password" placeholder="Password">
+    <input type="text" id="name" placeholder="Full Name (can be repeated)" />
+    <input type="text" id="username" placeholder="Username (must be unique)" />
+    <input type="password" id="password" placeholder="Password" />
     <button onclick="signup()">Sign Up</button>
     <p>Already have an account? <a href="login.html">Login</a></p>
   </div>
@@ -18,15 +19,36 @@
   <script src="firebase-config.js"></script>
   <script>
     async function signup() {
+      const name = document.getElementById("name").value.trim();
       const username = document.getElementById("username").value.trim();
       const password = document.getElementById("password").value;
 
-      const doc = await db.collection("users").doc(username).get();
-      if (doc.exists) return alert("Username already taken.");
+      if (!name || !username || !password) {
+        alert("Please fill in all fields.");
+        return;
+      }
 
-      await db.collection("users").doc(username).set({ password });
-      localStorage.setItem("username", username);
-      window.location.href = "dashboard.html";
+      try {
+        const doc = await db.collection("users").doc(username).get();
+        if (doc.exists) {
+          alert("Username already taken.");
+          return;
+        }
+
+        await db.collection("users").doc(username).set({
+          name,
+          password,
+          friends: []
+        });
+
+        localStorage.setItem("username", username);
+        localStorage.setItem("name", name);
+
+        window.location.href = "dashboard.html";
+      } catch (error) {
+        console.error("Error signing up:", error);
+        alert("Something went wrong. Please try again.");
+      }
     }
   </script>
 </body>
