@@ -1,0 +1,104 @@
+/* === Reset === */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: var(--bg);
+  color: var(--text);
+  transition: background-color 0.3s, color 0.3s;
+  padding: 30px;
+}
+
+:root {
+  --bg: #e3f2fd;
+  --text: #0d47a1;
+  --card: #ffffff;
+  --border: #bbdefb;
+  --hover: #e1f5fe;
+}
+
+body.dark {
+  --bg: #0d1b2a;
+  --text: #ffffff;
+  --card: #1b263b;
+  --border: #415a77;
+  --hover: #1c2c40;
+}
+
+.container {
+  max-width: 500px;
+  margin: 0 auto;
+  background-color: var(--card);
+  padding: 25px 30px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+h2 {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+/* === Search Input === */
+#search {
+  width: 100%;
+  padding: 12px 15px;
+  margin-bottom: 15px;
+  border: 1px solid var(--border);
+  border-radius: 25px;
+  font-size: 16px;
+  background-color: var(--bg);
+  color: var(--text);
+}
+
+/* === User List === */
+#userList {
+  list-style: none;
+  padding: 0;
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  max-height: 400px;
+  overflow-y: auto;
+  border-radius: 10px;
+}
+
+#userList li {
+  padding: 12px 15px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background-color 0.2s;
+}
+
+#userList li:hover {
+  background-color: var(--hover);
+}
+
+/* === Add Button === */
+#userList button {
+  padding: 6px 12px;
+  font-size: 14px;
+  border: none;
+  border-radius: 20px;
+  background-color: #1565c0;
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+#userList button:hover {
+  background-color: #0d47a1;
+}
+
+/* === Responsive === */
+@media (max-width: 600px) {
+  .container {
+    width: 90%;
+    padding: 20px;
+  }
+}
