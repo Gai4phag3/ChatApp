@@ -141,9 +141,8 @@
     // Load friends on dashboard
     function loadFriends() {
       friendList.innerHTML = "";
-      db.collection("users")
-        .doc(currentUser)
-        .collection("friends")
+      db.collection("friends")
+        .where("user", "==", currentUser)
         .get()
         .then((snapshot) => {
           if (snapshot.empty) {
@@ -152,18 +151,18 @@
           }
 
           snapshot.forEach((doc) => {
-            const friend = doc.id;
+            const friendUsername = doc.data().friend;
 
             db.collection("users")
-              .doc(friend)
+              .doc(friendUsername)
               .get()
               .then((friendDoc) => {
-                const friendName = friendDoc.exists ? friendDoc.data().name || friend : friend;
+                const friendName = friendDoc.exists ? friendDoc.data().name || friendUsername : friendUsername;
 
                 const btn = document.createElement("button");
                 btn.className = "friend-button";
                 btn.textContent = friendName;
-                btn.onclick = () => openChatWith(friend);
+                btn.onclick = () => openChatWith(friendUsername);
                 friendList.appendChild(btn);
               });
           });
@@ -173,6 +172,7 @@
           friendList.innerHTML = "<p>Error loading friends.</p>";
         });
     }
+
 
     function openChatWith(friendUsername) {
       localStorage.setItem("chatWith", friendUsername);
