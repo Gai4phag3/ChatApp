@@ -1,1 +1,245 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Dashboard</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .container {
+      max-width: 600px;
+      margin: auto;
+      padding: 20px;
+    }
 
+    .friend-button {
+      display: block;
+      width: 100%;
+      margin: 10px 0;
+      padding: 10px;
+      font-size: 16px;
+      background-color: #3498db;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .friend-button:hover {
+      background-color: #2980b9;
+    }
+
+    .badge {
+      position: absolute;
+      top: 8px;
+      right: 10px;
+      background: red;
+      color: white;
+      border-radius: 50%;
+      padding: 3px 7px;
+      font-size: 12px;
+      font-weight: bold;
+      min-width: 18px;
+      text-align: center;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .top-buttons {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .top-buttons button {
+      padding: 8px 16px;
+      font-size: 14px;
+      background-color: #2ecc71;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .top-buttons button.logout {
+      background-color: #e74c3c;
+    }
+
+    .top-buttons button:hover {
+      opacity: 0.9;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Welcome, <span id="username-display"></span>!</h2>
+
+    <div class="top-buttons">
+      <button onclick="goToAddFriends()">➕ Add Friends</button>
+      <button onclick="logout()" class="logout">Logout</button>
+    </div>
+
+    <h3>Your Friends</h3>
+    <div id="friend-list"></div>
+  </div>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+  <script src="firebase-config.js"></script>
+
+  <script>
+    const currentUser = localStorage.getItem("username");
+    if (!currentUser) {
+      alert("No user logged in. Redirecting to login...");
+      window.location.href = "index.html";
+    }
+
+    document.getElementById("username-display").textContent = currentUser;
+
+    const friendList = document.getElementById("friend-list");
+
+    // This will hold friends and their statuses: { accepted: bool, unreadMessages: number }
+    const friendsStatus = {};
+
+    // Load friend requests & friends (accepted or pending)
+    function loadFriends() {
+      friendList.innerHTML = "";
+
+      // Get all friend docs where user == currentUser
+      db.collection("friends")
+        .where("user", "==", currentUser)
+        .get()
+        .then(snapshot => {
+          if (snapshot.empty) {
+            friendList.innerHTML = "<p>You have no friends yet. Add some!</p>";
+            return;
+          }
+
+          friendsStatus.clear;
+          snapshot.forEach(doc => {
+            const data = doc.data();
+            friendsStatus[data.friend] = {
+              accepted: data.accepted || false,
+              unreadMessages: 0
+            };
+          });
+
+          loadUnreadMessages();
+        })
+        .catch(err => {
+          console.error("Failed to load friends:", err);
+          friendList.innerHTML = "<p>Error loading friends.</p>";
+        });
+    }
+
+    // Load unread messages count for each friend
+    function loadUnreadMessages() {
+      db.collection("messages")
+        .where("to", "==", currentUser)
+        .where("read", "==", false)
+        .get()
+        .then(snapshot => {
+          snapshot.forEach(doc => {
+            const from = doc.data().from;
+            if (friendsStatus[from]) {
+              friendsStatus[from].unreadMessages++;
+            }
+          });
+
+          renderFriendsUI();
+        })
+        .catch(err => {
+          console.error("Failed to load unread messages:", err);
+          renderFriendsUI();
+        });
+    }
+
+    function renderFriendsUI() {
+      friendList.innerHTML = "";
+
+      const friendUsernames = Object.keys(friendsStatus);
+      if (friendUsernames.length === 0) {
+        friendList.innerHTML = "<p>You have no friends yet. Add some!</p>";
+        return;
+      }
+
+      friendUsernames.forEach(friendUsername => {
+        db.collection("users")
+          .doc(friendUsername)
+          .get()
+          .then(friendDoc => {
+            const friendName = friendDoc.exists ? friendDoc.data().name || friendUsername : friendUsername;
+            const status = friendsStatus[friendUsername];
+
+            const btn = document.createElement("button");
+            btn.className = "friend-button";
+            btn.textContent = friendName;
+
+            // If friend request pending (not accepted)
+            if (!status.accepted) {
+              const badge = document.createElement("span");
+              badge.className = "badge";
+              badge.textContent = "Request";
+              badge.title = "Click to accept friend request";
+              badge.onclick = (e) => {
+                e.stopPropagation(); // prevent button click
+                acceptFriendRequest(friendUsername);
+              };
+              btn.appendChild(badge);
+              btn.onclick = () => alert("You need to accept the friend request first.");
+            } else if (status.unreadMessages > 0) {
+              // Show unread message badge
+              const badge = document.createElement("span");
+              badge.className = "badge";
+              badge.textContent = status.unreadMessages;
+              btn.appendChild(badge);
+              btn.onclick = () => openChatWith(friendUsername);
+            } else {
+              btn.onclick = () => openChatWith(friendUsername);
+            }
+
+            friendList.appendChild(btn);
+          });
+      });
+    }
+
+    // Accept friend request by updating accepted to true & creating reciprocal friend doc
+    function acceptFriendRequest(friendUsername) {
+      db.collection("friends")
+        .where("user", "==", currentUser)
+        .where("friend", "==", friendUsername)
+        .get()
+        .then(querySnapshot => {
+          querySnapshot.forEach(doc => {
+            doc.ref.update({ accepted: true });
+          });
+          // Add reciprocal friend doc for the friend
+          db.collection("friends").add({
+            user: friendUsername,
+            friend: currentUser,
+            accepted: true
+          });
+          alert(`You accepted the friend request from ${friendUsername}`);
+          loadFriends();
+        });
+    }
+
+    function openChatWith(friendUsername) {
+      localStorage.setItem("chatWith", friendUsername);
+      window.location.href = "chat.html";
+    }
+
+    function goToAddFriends() {
+      window.location.href = "add-friends.html";
+    }
+
+    function logout() {
+      localStorage.removeItem("username");
+      localStorage.removeItem("chatWith");
+      window.location.href = "index.html";
+    }
+
+    loadFriends();
+  </script>
+</body>
+</html>
