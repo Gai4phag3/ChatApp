@@ -2,7 +2,7 @@
 <html>
 <head>
   <title>Dashboard</title>
-  <link rel="stylesheet" href="stylesdashboard.css" />
+  <link rel="stylesheet" href="styles.css" />
   <style>
     .container {
       max-width: 600px;
@@ -67,24 +67,32 @@
 
   <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
   <script src="firebase-config.js"></script>
 
   <script>
-    const currentUser = localStorage.getItem("username");
-    if (!currentUser) {
-      alert("No user logged in. Redirecting to login...");
-      window.location.href = "index.html";
-    }
-
-    document.getElementById("username-display").textContent = currentUser;
-
+    const usernameDisplay = document.getElementById("username-display");
     const friendList = document.getElementById("friend-list");
+
+    let currentUID = null;
+
+    firebase.auth().onAuthStateChanged((user) => {
+      if (!user) {
+        alert("No user logged in. Redirecting to login...");
+        window.location.href = "index.html";
+      } else {
+        currentUID = user.uid;
+        // Show the username from localStorage, or fallback to UID
+        usernameDisplay.textContent = localStorage.getItem("username") || user.uid;
+        loadFriends();
+      }
+    });
 
     function loadFriends() {
       friendList.innerHTML = "";
       db.collection("users")
-        .doc(currentUser)
+        .doc(currentUID)
         .collection("friends")
         .get()
         .then((snapshot) => {
@@ -94,18 +102,18 @@
           }
 
           snapshot.forEach((doc) => {
-            const friend = doc.id;
+            const friendUID = doc.id;
 
             db.collection("users")
-              .doc(friend)
+              .doc(friendUID)
               .get()
               .then((friendDoc) => {
-                const friendName = friendDoc.exists ? friendDoc.data().name || friend : friend;
+                const friendName = friendDoc.exists ? friendDoc.data().name || friendUID : friendUID;
 
                 const btn = document.createElement("button");
                 btn.className = "friend-button";
                 btn.textContent = friendName;
-                btn.onclick = () => openChatWith(friend);
+                btn.onclick = () => openChatWith(friendUID);
                 friendList.appendChild(btn);
               });
           });
@@ -116,8 +124,8 @@
         });
     }
 
-    function openChatWith(friendUsername) {
-      localStorage.setItem("chatWith", friendUsername);
+    function openChatWith(friendUID) {
+      localStorage.setItem("chatWith", friendUID);
       window.location.href = "chat.html";
     }
 
@@ -126,12 +134,12 @@
     }
 
     function logout() {
-      localStorage.removeItem("username");
-      localStorage.removeItem("chatWith");
-      window.location.href = "index.html";
+      firebase.auth().signOut().then(() => {
+        localStorage.removeItem("username");
+        localStorage.removeItem("chatWith");
+        window.location.href = "index.html";
+      });
     }
-
-    loadFriends();
   </script>
 </body>
 </html>
