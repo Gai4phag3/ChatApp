@@ -1,80 +1,120 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Dashboard</title>
-  <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <title>Dashboard - Friends List</title>
+  <link rel="stylesheet" href="stylesdashboard.css">
 </head>
 <body>
   <div class="container">
-    <h2>Welcome, <span id="username-display"></span>!</h2>
+    <h2 id="welcomeText">Welcome, <span id="displayName"></span>!</h2>
+    <p style="text-align: center; font-size: 14px; color: #666;">@<span id="usernameDisplay"></span></p>
 
-    <div class="top-buttons">
-      <button onclick="goToAddFriends()">➕ Add Friends</button>
-      <button onclick="logout()" class="logout">Logout</button>
-    </div>
-
-    <h3>Your Friends</h3>
-    <ul id="friend-list"></ul>
+    <button id="settingsBtn" onclick="openSettings()">⚙️</button>
+    <button id="addFriendBtn" onclick="location.href='add-friends.html'">➕ Add Friends</button>
+    <ul id="friendList"></ul>
   </div>
 
-  <script type="module">
-    import { db, auth, signOut } from './firebase-config.js';
-    import {
-      collection,
-      getDocs,
-      getDoc,
-      doc
-    } from "https://www.gstatic.com/firebasejs/9.1.3/firebase-firestore.js";
+  <!-- Settings Modal -->
+  <div id="overlay" onclick="closeSettings()"></div>
+  <div id="settingsModal">
+    <h3>Settings</h3>
+    <button onclick="toggleTheme()">🌓 Toggle Theme</button>
+    <button onclick="deleteAccount()">❌ Delete Account</button>
+    <button onclick="closeSettings()">Close</button>
+  </div>
 
-    const uid = localStorage.getItem("uid");
-    const name = localStorage.getItem("name");
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js"></script>
 
-    if (!uid) {
-      alert("You are not logged in.");
+  <script>
+    const username = localStorage.getItem('username');
+    const name = localStorage.getItem('name');
+
+    document.getElementById("usernameDisplay").textContent = username;
+    document.getElementById("displayName").textContent = name || username;
+
+    
+    const welcomeText = document.getElementById('welcomeText');
+    const friendList = document.getElementById('friendList');
+
+    if (!username) {
+      alert("You're not logged in.");
       window.location.href = "login.html";
+    } else {
+      welcomeText.textContent = `Welcome, ${username}`;
+      loadFriends();
     }
-
-    document.getElementById("username-display").textContent = name;
-
-    const friendList = document.getElementById("friend-list");
 
     async function loadFriends() {
-      friendList.innerHTML = ""; // Clear existing list
+      try {
+        const userDoc = await db.collection('users').doc(username).get();
+        if (!userDoc.exists) {
+          friendList.innerHTML = "<li>User not found in database</li>";
+          return;
+        }
 
-      const friendsRef = collection(db, "users", uid, "friends");
-      const snapshot = await getDocs(friendsRef);
+        const friends = userDoc.data().friends || [];
 
-      if (snapshot.empty) {
-        friendList.innerHTML = "<li>You have no friends yet.</li>";
-        return;
+        if (friends.length === 0) {
+          friendList.innerHTML = "<li>You have no friends yet. Click ➕ Add Friends to get started!</li>";
+          return;
+        }
+
+        friendList.innerHTML = '';
+        friends.forEach(friend => {
+          const li = document.createElement('li');
+          li.textContent = friend;
+          li.onclick = () => {
+            localStorage.setItem('chatWith', friend);
+            window.location.href = 'chat.html';
+          };
+          friendList.appendChild(li);
+        });
+      } catch (err) {
+        console.error("Error loading friends:", err);
+        friendList.innerHTML = "<li>Something went wrong loading friends.</li>";
       }
+    }
 
-      for (const friendDoc of snapshot.docs) {
-        const friendId = friendDoc.id;
+    // Theme Toggle
+    function toggleTheme() {
+      document.body.classList.toggle('dark');
+      localStorage.setItem('theme', document.body.classList.contains('dark') ? 'dark' : 'light');
+    }
 
-        const userDoc = await getDoc(doc(db, "users", friendId));
-        const friendName = userDoc.exists() ? userDoc.data().name : friendId;
-
-        const li = document.createElement("li");
-        li.textContent = friendName;
-        li.onclick = () => openChatWith(friendId);
-        friendList.appendChild(li);
+    window.addEventListener('DOMContentLoaded', () => {
+      if (localStorage.getItem('theme') === 'dark') {
+        document.body.classList.add('dark');
       }
+    });
+
+    // Modal functions
+    function openSettings() {
+      document.getElementById("overlay").style.display = "block";
+      document.getElementById("settingsModal").style.display = "block";
     }
 
-    function openChatWith(friendId) {
-      localStorage.setItem("chatWith", friendId);
-      window.location.href = "chat.html";
+    function closeSettings() {
+      document.getElementById("overlay").style.display = "none";
+      document.getElementById("settingsModal").style.display = "none";
     }
 
-    function goToAddFriends() {
-      window.location.href = "add-friends.html";
-    }
+    async function deleteAccount() {
+      const confirmDelete = confirm("Are you sure you want to delete your account?");
+      if (!confirmDelete) return;
 
-    function logout() {
-      signOut(auth);
-      localStorage.clear();
-      window.location.href = "index.html";
+      try {
+        await db.collection("users").doc(username).delete();
+        localStorage.clear();
+        alert("Account deleted.");
+        window.location.href = "signup.html";
+      } catch (err) {
+        alert("Error deleting account.");
+        console.error(err);
+      }
     }
 
     // Load the friend list on page load
