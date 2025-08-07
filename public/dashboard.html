@@ -2,55 +2,7 @@
 <html>
 <head>
   <title>Dashboard</title>
-  <link rel="stylesheet" href="styles.css" />
-  <style>
-    .container {
-      max-width: 600px;
-      margin: auto;
-      padding: 20px;
-    }
-
-    .friend-button {
-      display: block;
-      width: 100%;
-      margin: 10px 0;
-      padding: 10px;
-      font-size: 16px;
-      background-color: #3498db;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-
-    .friend-button:hover {
-      background-color: #2980b9;
-    }
-
-    .top-buttons {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 20px;
-    }
-
-    .top-buttons button {
-      padding: 8px 16px;
-      font-size: 14px;
-      background-color: #2ecc71;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-
-    .top-buttons button.logout {
-      background-color: #e74c3c;
-    }
-
-    .top-buttons button:hover {
-      opacity: 0.9;
-    }
-  </style>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div class="container">
@@ -62,50 +14,56 @@
     </div>
 
     <h3>Your Friends</h3>
-    <div id="friend-list"></div>
+    <ul id="friend-list"></ul>
   </div>
 
-  <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
-  <script src="firebase-config.js"></script>
+  <script type="module">
+    import { db, auth, signOut } from './firebase-config.js';
+    import {
+      collection,
+      getDocs,
+      getDoc,
+      doc
+    } from "https://www.gstatic.com/firebasejs/9.1.3/firebase-firestore.js";
 
-  <script>
-    const currentUser = localStorage.getItem("username");
-    if (!currentUser) {
-      alert("No user logged in. Redirecting to login...");
-      window.location.href = "index.html";
+    const uid = localStorage.getItem("uid");
+    const name = localStorage.getItem("name");
+
+    if (!uid) {
+      alert("You are not logged in.");
+      window.location.href = "login.html";
     }
 
-    document.getElementById("username-display").textContent = currentUser;
+    document.getElementById("username-display").textContent = name;
 
     const friendList = document.getElementById("friend-list");
 
-    db.collection("users")
-      .doc(currentUser)
-      .collection("friends")
-      .get()
-      .then((snapshot) => {
-        if (snapshot.empty) {
-          friendList.innerHTML = "<p>You have no friends yet. Add some!</p>";
-        }
+    async function loadFriends() {
+      friendList.innerHTML = ""; // Clear existing list
 
-        snapshot.forEach((doc) => {
-          const friend = doc.id;
-          const btn = document.createElement("button");
-          btn.className = "friend-button";
-          btn.textContent = friend;
-          btn.onclick = () => openChatWith(friend);
-          friendList.appendChild(btn);
-        });
-      })
-      .catch((err) => {
-        console.error("Failed to load friends:", err);
-        friendList.innerHTML = "<p>Error loading friends.</p>";
-      });
+      const friendsRef = collection(db, "users", uid, "friends");
+      const snapshot = await getDocs(friendsRef);
 
-    function openChatWith(friendUsername) {
-      localStorage.setItem("chatWith", friendUsername);
+      if (snapshot.empty) {
+        friendList.innerHTML = "<li>You have no friends yet.</li>";
+        return;
+      }
+
+      for (const friendDoc of snapshot.docs) {
+        const friendId = friendDoc.id;
+
+        const userDoc = await getDoc(doc(db, "users", friendId));
+        const friendName = userDoc.exists() ? userDoc.data().name : friendId;
+
+        const li = document.createElement("li");
+        li.textContent = friendName;
+        li.onclick = () => openChatWith(friendId);
+        friendList.appendChild(li);
+      }
+    }
+
+    function openChatWith(friendId) {
+      localStorage.setItem("chatWith", friendId);
       window.location.href = "chat.html";
     }
 
@@ -114,10 +72,13 @@
     }
 
     function logout() {
-      localStorage.removeItem("username");
-      localStorage.removeItem("chatWith");
+      signOut(auth);
+      localStorage.clear();
       window.location.href = "index.html";
     }
+
+    // Load the friend list on page load
+    loadFriends();
   </script>
 </body>
 </html>
