@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Settings</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="container">
+    <h2>Settings</h2>
+    <button onclick="deleteAccount()">Delete My Account</button>
+    <br /><br />
+    <a href="dashboard.html">← Back to Dashboard</a>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+  <script src="firebase-config.js"></script>
+  <script>
+    const currentUser = localStorage.getItem("username");
+    if (!currentUser) {
+      alert("Not logged in.");
+      window.location.href = "index.html";
+    }
+
+    function deleteAccount() {
+      if (!confirm("Are you sure you want to delete your account? This action is irreversible.")) return;
+
+      db.collection("users").doc(currentUser).delete().then(() => {
+        alert("Account deleted.");
+        localStorage.removeItem("username");
+        window.location.href = "index.html";
+      }).catch(error => {
+        console.error("Error deleting account:", error);
+        alert("Failed to delete account.");
+      });
+    }
+  </script>
+</body>
+</html>

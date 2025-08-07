@@ -31,6 +31,8 @@
       display: flex;
       justify-content: space-between;
       margin-bottom: 20px;
+      gap: 10px;
+      flex-wrap: wrap;
     }
 
     .top-buttons button {
@@ -45,6 +47,10 @@
 
     .top-buttons button.logout {
       background-color: #e74c3c;
+    }
+
+    .top-buttons button.settings {
+      background-color: #9b59b6;
     }
 
     .top-buttons button:hover {
@@ -76,6 +82,7 @@
 
     <div class="top-buttons">
       <button onclick="goToAddFriends()">➕ Add Friends</button>
+      <button onclick="goToSettings()" class="settings">⚙️ Settings</button>
       <button onclick="logout()" class="logout">Logout</button>
     </div>
 
@@ -118,7 +125,6 @@
           snapshot.forEach(doc => {
             const friendUsername = doc.data().friend;
 
-            // Optionally get friend's display name
             db.collection("users").doc(friendUsername).get().then(friendDoc => {
               const friendName = friendDoc.exists ? (friendDoc.data().name || friendUsername) : friendUsername;
 
@@ -173,7 +179,6 @@
         .doc(requestDocId)
         .update({ accepted: true })
         .then(() => {
-          // Add reciprocal friendship for mutual friendship
           return db.collection("friends").add({
             user: currentUser,
             friend: requesterUsername,
@@ -198,6 +203,10 @@
 
     function goToAddFriends() {
       window.location.href = "add-friends.html";
+    }
+
+    function goToSettings() {
+      window.location.href = "settings.html";
     }
 
     function logout() {
