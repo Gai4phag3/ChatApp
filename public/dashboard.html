@@ -4,75 +4,114 @@
   <title>Dashboard</title>
   <link rel="stylesheet" href="styles.css" />
   <style>
+    * {
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background: #f4f6f8;
+      color: #333;
+    }
+
     .container {
-      max-width: 600px;
-      margin: auto;
-      padding: 20px;
+      max-width: 700px;
+      margin: 50px auto;
+      padding: 30px;
+      background-color: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
     }
 
-    .friend-button {
-      display: block;
-      width: 100%;
-      margin: 10px 0;
-      padding: 10px;
-      font-size: 16px;
-      background-color: #3498db;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
+    h2 {
+      text-align: center;
+      margin-bottom: 30px;
     }
 
-    .friend-button:hover {
-      background-color: #2980b9;
+    h3 {
+      margin-top: 40px;
+      margin-bottom: 15px;
+      border-bottom: 1px solid #ddd;
+      padding-bottom: 5px;
     }
 
     .top-buttons {
       display: flex;
       justify-content: space-between;
-      margin-bottom: 20px;
       gap: 10px;
+      margin-bottom: 30px;
       flex-wrap: wrap;
     }
 
     .top-buttons button {
-      padding: 8px 16px;
-      font-size: 14px;
-      background-color: #2ecc71;
-      color: white;
+      flex: 1;
+      padding: 10px;
+      font-size: 15px;
+      font-weight: 500;
       border: none;
-      border-radius: 6px;
+      border-radius: 8px;
       cursor: pointer;
-    }
-
-    .top-buttons button.logout {
-      background-color: #e74c3c;
-    }
-
-    .top-buttons button.settings {
-      background-color: #9b59b6;
+      color: #fff;
+      transition: background 0.3s ease;
     }
 
     .top-buttons button:hover {
       opacity: 0.9;
     }
 
-    /* Friend Requests styles */
-    #friend-requests > div {
-      margin-bottom: 10px;
+    .top-buttons .add {
+      background-color: #3498db;
     }
+
+    .top-buttons .settings {
+      background-color: #9b59b6;
+    }
+
+    .top-buttons .logout {
+      background-color: #e74c3c;
+    }
+
+    .friend-button {
+      width: 100%;
+      margin-bottom: 10px;
+      padding: 12px;
+      font-size: 16px;
+      background-color: #2ecc71;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    .friend-button:hover {
+      background-color: #27ae60;
+    }
+
+    #friend-requests > div {
+      background-color: #f1f1f1;
+      padding: 10px;
+      border-radius: 6px;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
     #friend-requests button {
-      margin-left: 10px;
-      padding: 5px 10px;
+      padding: 6px 12px;
+      background-color: #2980b9;
+      color: white;
+      border: none;
+      border-radius: 6px;
       font-size: 14px;
       cursor: pointer;
-      border-radius: 4px;
-      border: none;
-      background-color: #27ae60;
-      color: white;
     }
+
     #friend-requests button:hover {
-      background-color: #1e8449;
+      background-color: #1c5980;
     }
   </style>
 </head>
@@ -81,7 +120,7 @@
     <h2>Welcome, <span id="username-display"></span>!</h2>
 
     <div class="top-buttons">
-      <button onclick="goToAddFriends()">➕ Add Friends</button>
+      <button onclick="goToAddFriends()" class="add">➕ Add Friends</button>
       <button onclick="goToSettings()" class="settings">⚙️ Settings</button>
       <button onclick="logout()" class="logout">Logout</button>
     </div>
@@ -215,7 +254,6 @@
       window.location.href = "index.html";
     }
 
-    // Initial load
     loadFriends();
     loadFriendRequests();
   </script>

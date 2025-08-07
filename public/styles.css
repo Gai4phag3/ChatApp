@@ -1,4 +1,4 @@
-/* === Reset === */
+/* === Global Reset === */
 * {
   box-sizing: border-box;
   margin: 0;
@@ -16,7 +16,7 @@ body {
   padding: 20px;
 }
 
-/* === Generic Container === */
+/* === Main Container === */
 .container {
   background: #ffffff;
   width: 100%;
@@ -29,11 +29,18 @@ body {
 /* === Headings === */
 h2 {
   text-align: center;
-  margin-bottom: 20px;
+  margin-bottom: 25px;
   color: #0d47a1;
 }
 
-/* === Inputs === */
+h3 {
+  margin: 30px 0 10px;
+  color: #333;
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 5px;
+}
+
+/* === Form Inputs === */
 input[type="text"],
 input[type="password"] {
   width: 100%;
@@ -68,6 +75,22 @@ button:hover {
   background-color: #1976d2;
 }
 
+/* === Inline Action Buttons === */
+.inline-button {
+  padding: 6px 14px;
+  font-size: 14px;
+  border-radius: 20px;
+  border: none;
+  background-color: #2196f3;
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.inline-button:hover {
+  background-color: #1976d2;
+}
+
 /* === Links === */
 a {
   color: #2196f3;
@@ -83,7 +106,7 @@ p {
   margin-top: 15px;
 }
 
-/* === Chat Area === */
+/* === Chat Message Area === */
 #messages {
   list-style: none;
   padding: 0;
@@ -128,7 +151,7 @@ p {
   border-bottom-left-radius: 0;
 }
 
-/* === Chat Form === */
+/* === Chat Input Form === */
 form {
   display: flex;
   gap: 10px;
@@ -140,7 +163,7 @@ form input {
   border-radius: 25px;
 }
 
-/* === Friend List === */
+/* === Friend/User Lists === */
 ul#friendList,
 ul#userList {
   list-style: none;
@@ -160,8 +183,8 @@ ul#userList {
   justify-content: space-between;
   align-items: center;
   border-bottom: 1px solid #e3f2fd;
-  cursor: pointer;
   transition: background-color 0.2s ease;
+  cursor: pointer;
 }
 
 #friendList li:hover,
@@ -169,26 +192,13 @@ ul#userList {
   background-color: #f0f7ff;
 }
 
-#userList button {
-  padding: 5px 10px;
-  font-size: 14px;
-  border-radius: 20px;
-  border: none;
-  background-color: #2196f3;
-  color: white;
-  cursor: pointer;
-}
-
-#userList button:hover {
-  background-color: #1976d2;
-}
-
-/* === Top Bar (Dashboard) === */
+/* === Dashboard Top Bar === */
 #topBar {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 15px;
+  gap: 10px;
 }
 
 #addFriendBtn,
@@ -220,6 +230,8 @@ ul#userList {
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
   display: none;
   z-index: 1000;
+  width: 90%;
+  max-width: 400px;
 }
 
 #settingsModal h3 {
@@ -232,24 +244,36 @@ ul#userList {
 }
 
 #settingsModal button {
-  background-color: #2196f3;
   margin-top: 10px;
-  padding: 8px 12px;
+  padding: 10px 16px;
   border-radius: 8px;
-  border: none;
-  color: white;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+/* === Notifications === */
+.notification-badge {
+  display: inline-block;
+  min-width: 18px;
+  padding: 2px 6px;
+  font-size: 12px;
   font-weight: bold;
-  cursor: pointer;
+  background-color: #e53935;
+  color: white;
+  border-radius: 12px;
+  text-align: center;
+  margin-left: 8px;
 }
 
-#settingsModal button:hover {
-  background-color: #1976d2;
-}
-
-/* === Responsive === */
+/* === Responsive Design === */
 @media (max-width: 600px) {
   .container {
     width: 90%;
     padding: 20px;
+  }
+
+  #topBar {
+    flex-direction: column;
+    align-items: stretch;
   }
 }
