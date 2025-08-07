@@ -87,17 +87,26 @@
     }
 
     function addFriend(friendUsername) {
-      db.collection("users").doc(currentUsername).collection("friends").doc(friendUsername).set({})
-        .then(() => {
-          currentFriends.push(friendUsername);
-          allUsers = allUsers.filter(user => user.username !== friendUsername);
-          renderUserList();
-        })
-        .catch(error => {
-          console.error("Error adding friend: ", error);
-          alert("Could not add friend.");
-        });
+      db.collection("friends").add({
+        user: currentUsername,
+        friend: friendUsername
+      })
+      .then(() => {
+        // Add friendUsername to currentFriends immediately
+        currentFriends.push(friendUsername);
+
+        // Remove friendUsername from allUsers array to prevent showing again
+        allUsers = allUsers.filter(user => user.username !== friendUsername);
+
+        // Re-render user list to update UI immediately
+        renderUserList();
+      })
+      .catch(error => {
+        console.error("Error adding friend: ", error);
+        alert("Could not add friend.");
+      });
     }
+
 
 
     function fetchUsersAndFriends() {
