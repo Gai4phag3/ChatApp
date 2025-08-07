@@ -21,27 +21,10 @@
       border: none;
       border-radius: 6px;
       cursor: pointer;
-      position: relative;
     }
 
     .friend-button:hover {
       background-color: #2980b9;
-    }
-
-    .badge {
-      position: absolute;
-      top: 8px;
-      right: 10px;
-      background: red;
-      color: white;
-      border-radius: 50%;
-      padding: 3px 7px;
-      font-size: 12px;
-      font-weight: bold;
-      min-width: 18px;
-      text-align: center;
-      cursor: pointer;
-      user-select: none;
     }
 
     .top-buttons {
@@ -67,6 +50,24 @@
     .top-buttons button:hover {
       opacity: 0.9;
     }
+
+    /* Friend Requests styles */
+    #friend-requests > div {
+      margin-bottom: 10px;
+    }
+    #friend-requests button {
+      margin-left: 10px;
+      padding: 5px 10px;
+      font-size: 14px;
+      cursor: pointer;
+      border-radius: 4px;
+      border: none;
+      background-color: #27ae60;
+      color: white;
+    }
+    #friend-requests button:hover {
+      background-color: #1e8449;
+    }
   </style>
 </head>
 <body>
@@ -80,6 +81,9 @@
 
     <h3>Your Friends</h3>
     <div id="friend-list"></div>
+
+    <h3>Friend Requests</h3>
+    <div id="friend-requests"></div>
   </div>
 
   <!-- Firebase -->
@@ -97,17 +101,13 @@
     document.getElementById("username-display").textContent = currentUser;
 
     const friendList = document.getElementById("friend-list");
+    const friendRequestsDiv = document.getElementById("friend-requests");
 
-    // This will hold friends and their statuses: { accepted: bool, unreadMessages: number }
-    const friendsStatus = {};
-
-    // Load friend requests & friends (accepted or pending)
     function loadFriends() {
       friendList.innerHTML = "";
-
-      // Get all friend docs where user == currentUser
       db.collection("friends")
         .where("user", "==", currentUser)
+        .where("accepted", "==", true)
         .get()
         .then(snapshot => {
           if (snapshot.empty) {
@@ -115,16 +115,20 @@
             return;
           }
 
-          friendsStatus.clear;
           snapshot.forEach(doc => {
-            const data = doc.data();
-            friendsStatus[data.friend] = {
-              accepted: data.accepted || false,
-              unreadMessages: 0
-            };
-          });
+            const friendUsername = doc.data().friend;
 
-          loadUnreadMessages();
+            // Optionally get friend's display name
+            db.collection("users").doc(friendUsername).get().then(friendDoc => {
+              const friendName = friendDoc.exists ? (friendDoc.data().name || friendUsername) : friendUsername;
+
+              const btn = document.createElement("button");
+              btn.className = "friend-button";
+              btn.textContent = friendName;
+              btn.onclick = () => openChatWith(friendUsername);
+              friendList.appendChild(btn);
+            });
+          });
         })
         .catch(err => {
           console.error("Failed to load friends:", err);
@@ -132,95 +136,58 @@
         });
     }
 
-    // Load unread messages count for each friend
-    function loadUnreadMessages() {
-      db.collection("messages")
-        .where("to", "==", currentUser)
-        .where("read", "==", false)
+    function loadFriendRequests() {
+      friendRequestsDiv.innerHTML = "";
+      db.collection("friends")
+        .where("friend", "==", currentUser)
+        .where("accepted", "==", false)
         .get()
         .then(snapshot => {
-          snapshot.forEach(doc => {
-            const from = doc.data().from;
-            if (friendsStatus[from]) {
-              friendsStatus[from].unreadMessages++;
-            }
-          });
+          if (snapshot.empty) {
+            friendRequestsDiv.innerHTML = "<p>No friend requests.</p>";
+            return;
+          }
 
-          renderFriendsUI();
+          snapshot.forEach(doc => {
+            const requesterUsername = doc.data().user;
+
+            const div = document.createElement("div");
+            div.textContent = requesterUsername;
+
+            const acceptBtn = document.createElement("button");
+            acceptBtn.textContent = "Accept";
+            acceptBtn.onclick = () => acceptFriendRequest(doc.id, requesterUsername);
+
+            div.appendChild(acceptBtn);
+            friendRequestsDiv.appendChild(div);
+          });
         })
         .catch(err => {
-          console.error("Failed to load unread messages:", err);
-          renderFriendsUI();
+          console.error("Error loading friend requests:", err);
+          friendRequestsDiv.innerHTML = "<p>Error loading friend requests.</p>";
         });
     }
 
-    function renderFriendsUI() {
-      friendList.innerHTML = "";
-
-      const friendUsernames = Object.keys(friendsStatus);
-      if (friendUsernames.length === 0) {
-        friendList.innerHTML = "<p>You have no friends yet. Add some!</p>";
-        return;
-      }
-
-      friendUsernames.forEach(friendUsername => {
-        db.collection("users")
-          .doc(friendUsername)
-          .get()
-          .then(friendDoc => {
-            const friendName = friendDoc.exists ? friendDoc.data().name || friendUsername : friendUsername;
-            const status = friendsStatus[friendUsername];
-
-            const btn = document.createElement("button");
-            btn.className = "friend-button";
-            btn.textContent = friendName;
-
-            // If friend request pending (not accepted)
-            if (!status.accepted) {
-              const badge = document.createElement("span");
-              badge.className = "badge";
-              badge.textContent = "Request";
-              badge.title = "Click to accept friend request";
-              badge.onclick = (e) => {
-                e.stopPropagation(); // prevent button click
-                acceptFriendRequest(friendUsername);
-              };
-              btn.appendChild(badge);
-              btn.onclick = () => alert("You need to accept the friend request first.");
-            } else if (status.unreadMessages > 0) {
-              // Show unread message badge
-              const badge = document.createElement("span");
-              badge.className = "badge";
-              badge.textContent = status.unreadMessages;
-              btn.appendChild(badge);
-              btn.onclick = () => openChatWith(friendUsername);
-            } else {
-              btn.onclick = () => openChatWith(friendUsername);
-            }
-
-            friendList.appendChild(btn);
-          });
-      });
-    }
-
-    // Accept friend request by updating accepted to true & creating reciprocal friend doc
-    function acceptFriendRequest(friendUsername) {
+    function acceptFriendRequest(requestDocId, requesterUsername) {
       db.collection("friends")
-        .where("user", "==", currentUser)
-        .where("friend", "==", friendUsername)
-        .get()
-        .then(querySnapshot => {
-          querySnapshot.forEach(doc => {
-            doc.ref.update({ accepted: true });
-          });
-          // Add reciprocal friend doc for the friend
-          db.collection("friends").add({
-            user: friendUsername,
-            friend: currentUser,
+        .doc(requestDocId)
+        .update({ accepted: true })
+        .then(() => {
+          // Add reciprocal friendship for mutual friendship
+          return db.collection("friends").add({
+            user: currentUser,
+            friend: requesterUsername,
             accepted: true
           });
-          alert(`You accepted the friend request from ${friendUsername}`);
+        })
+        .then(() => {
+          alert("Friend request accepted!");
+          loadFriendRequests();
           loadFriends();
+        })
+        .catch(err => {
+          console.error("Error accepting friend request:", err);
+          alert("Failed to accept friend request.");
         });
     }
 
@@ -239,7 +206,9 @@
       window.location.href = "index.html";
     }
 
+    // Initial load
     loadFriends();
+    loadFriendRequests();
   </script>
 </body>
 </html>
