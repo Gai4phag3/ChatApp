@@ -4,7 +4,6 @@
   <title>Sign Up</title>
   <link rel="icon" href="/favicon.png" type="image/x-icon" />
   <style>
-    /* Full-page background */
     body {
       margin: 0;
       height: 100vh;
@@ -15,8 +14,6 @@
       background-size: cover;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
-
-    /* Popup container */
     .popup-container {
       background: rgba(255, 255, 255, 0.15);
       backdrop-filter: blur(12px);
@@ -29,14 +26,10 @@
       text-align: center;
       animation: fadeIn 0.5s ease-in-out;
     }
-
-    /* Heading */
     .popup-container h2 {
       margin-bottom: 20px;
       font-weight: 500;
     }
-
-    /* Inputs */
     .popup-container input[type="text"],
     .popup-container input[type="password"] {
       width: 100%;
@@ -46,8 +39,6 @@
       border-radius: 6px;
       font-size: 14px;
     }
-
-    /* Checkbox */
     .checkbox-container {
       margin: 15px 0 0 0;
       font-size: 13px;
@@ -57,8 +48,6 @@
       margin-right: 8px;
       vertical-align: middle;
     }
-
-    /* Button */
     .popup-container button {
       width: 100%;
       padding: 10px;
@@ -74,8 +63,6 @@
     .popup-container button:hover {
       background: #1e8449;
     }
-
-    /* Link text */
     .popup-container p {
       margin-top: 15px;
       font-size: 13px;
@@ -87,20 +74,20 @@
     .popup-container a:hover {
       text-decoration: underline;
     }
-
-    /* Fade-in animation */
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(-10px); }
       to { opacity: 1; transform: translateY(0); }
     }
   </style>
 
-  <!-- Load bcrypt.js BEFORE your script -->
+  <!-- bcryptjs CDN -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/bcryptjs/2.4.3/bcrypt.min.js"></script>
 
-  <!-- Firebase SDK -->
+  <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
+  <!-- Your Firebase config script (make sure it defines "db") -->
   <script src="firebase-config.js"></script>
 </head>
 <body>
@@ -144,30 +131,31 @@
       }
 
       try {
-        // Check if username exists
+        // Check if username exists in Firestore
         const doc = await db.collection("users").doc(username).get();
         if (doc.exists) {
           alert("Username already taken.");
           return;
         }
 
-        // Hash the password before storing
+        // Hash password with bcryptjs (salt rounds = 10)
         const hashedPassword = await bcrypt.hash(password, 10);
 
+        // Store user in Firestore
         await db.collection("users").doc(username).set({
           name: name,
           password: hashedPassword,
           friends: []
         });
 
-        // Save user info in localStorage and redirect
+        // Save user info locally and redirect
         localStorage.setItem("username", username);
         localStorage.setItem("name", name);
 
         window.location.href = "dashboard.html";
       } catch (error) {
-        console.error("Error signing up:", error);
-        alert(`Something went wrong: ${error.message}`);
+        console.error("Signup error:", error);
+        alert("Something went wrong: " + error.message);
       }
     }
   </script>
