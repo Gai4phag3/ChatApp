@@ -4,6 +4,7 @@
   <title>Sign Up</title>
   <link rel="icon" href="/favicon.png" type="image/x-icon" />
   <style>
+    /* Full-page background */
     body {
       margin: 0;
       height: 100vh;
@@ -14,6 +15,8 @@
       background-size: cover;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
+
+    /* Popup container */
     .popup-container {
       background: rgba(255, 255, 255, 0.15);
       backdrop-filter: blur(12px);
@@ -26,10 +29,14 @@
       text-align: center;
       animation: fadeIn 0.5s ease-in-out;
     }
+
+    /* Heading */
     .popup-container h2 {
       margin-bottom: 20px;
       font-weight: 500;
     }
+
+    /* Inputs */
     .popup-container input[type="text"],
     .popup-container input[type="password"] {
       width: 100%;
@@ -39,15 +46,32 @@
       border-radius: 6px;
       font-size: 14px;
     }
+
+    /* Privacy policy checkbox container */
     .checkbox-container {
-      margin: 15px 0 0 0;
+      display: flex;
+      align-items: center;
+      margin: 12px 0;
       font-size: 13px;
-      text-align: left;
+      user-select: none;
     }
-    .checkbox-container input {
+
+    .checkbox-container input[type="checkbox"] {
       margin-right: 8px;
-      vertical-align: middle;
+      width: 16px;
+      height: 16px;
+      cursor: pointer;
     }
+
+    .checkbox-container a {
+      color: #ffcc70;
+      text-decoration: none;
+    }
+    .checkbox-container a:hover {
+      text-decoration: underline;
+    }
+
+    /* Button */
     .popup-container button {
       width: 100%;
       padding: 10px;
@@ -63,43 +87,26 @@
     .popup-container button:hover {
       background: #1e8449;
     }
+
+    /* Link text */
     .popup-container p {
       margin-top: 15px;
       font-size: 13px;
     }
-    .popup-container a {
+    .popup-container a.login-link {
       color: #ffcc70;
       text-decoration: none;
     }
-    .popup-container a:hover {
+    .popup-container a.login-link:hover {
       text-decoration: underline;
     }
+
+    /* Fade-in animation */
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(-10px); }
       to { opacity: 1; transform: translateY(0); }
     }
   </style>
-
-  <!-- Load bcrypt.js for browser -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/bcryptjs/2.4.3/bcrypt.min.js"></script>
-
-  <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
-
-  <script>
-    // Your Firebase config here
-  const firebaseConfig = {
-    apiKey: "AIzaSyCx00DmHMLmiDbfFUiBN3w5ueIxAzLqWus",
-    authDomain: "chitchat-254bc.firebaseapp.com",
-    projectId: "chitchat-254bc",
-    storageBucket: "chitchat-254bc.appspot.com",
-    messagingSenderId: "7406729436",
-    appId: "1:7406729436:web:4ceec3453f658398215c19"
-  };
-    // Initialize Firebase
-    firebase.initializeApp(firebaseConfig);
-  </script>
 </head>
 <body>
   <div class="popup-container">
@@ -107,17 +114,22 @@
     <input type="text" id="name" placeholder="Full Name (can be repeated)" />
     <input type="text" id="username" placeholder="Username (must be unique)" />
     <input type="password" id="password" placeholder="Password" />
-
+    
     <div class="checkbox-container">
       <input type="checkbox" id="privacyPolicy" />
       <label for="privacyPolicy">
-        I agree to the <a href="privacy-policy.html" target="_blank" style="color:#ffcc70;">Privacy Policy</a>
+        I agree to the <a href="privacy-policy.html" target="_blank" rel="noopener noreferrer">Privacy Policy</a>
       </label>
     </div>
-
+    
     <button onclick="signup()">Sign Up</button>
-    <p>Already have an account? <a href="login.html">Login</a></p>
+    <p>Already have an account? <a href="login.html" class="login-link">Login</a></p>
   </div>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+  <script src="firebase-config.js"></script>
 
   <script>
     async function signup() {
@@ -134,43 +146,27 @@
         alert("You must agree to the Privacy Policy to sign up.");
         return;
       }
-      if (typeof bcrypt === "undefined") {
-        alert("bcrypt library is not loaded!");
-        return;
-      }
 
       try {
-        // Check if username exists in Firestore
         const doc = await db.collection("users").doc(username).get();
         if (doc.exists) {
           alert("Username already taken.");
           return;
         }
 
-        // Hash password using bcryptjs (in browser)
-        const hashedPassword = await new Promise((resolve, reject) => {
-          bcrypt.hash(password, 10, function(err, hash) {
-            if (err) reject(err);
-            else resolve(hash);
-          });
-        });
-
-        // Store user info
         await db.collection("users").doc(username).set({
           name: name,
-          password: hashedPassword,
+          password: password,
           friends: []
         });
 
-        // Save user info locally and redirect
         localStorage.setItem("username", username);
         localStorage.setItem("name", name);
-        alert("Signup successful! Redirecting...");
-        window.location.href = "dashboard.html";
 
+        window.location.href = "dashboard.html";
       } catch (error) {
         console.error("Error signing up:", error);
-        alert("Something went wrong: " + error.message);
+        alert("Something went wrong. Please try again.");
       }
     }
   </script>
