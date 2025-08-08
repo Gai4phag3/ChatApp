@@ -8,112 +8,33 @@
   <link
     rel="stylesheet"
     href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    integrity="sha512-papbR6Y63PqH7zAGpS0eDlR4xzQc9fWjRcwJ7zPfp0RV67Q4QX8N6tBk1lLxiVRxliwtEl1HsYNezXyI6x2Mzw=="
     crossorigin="anonymous"
+    referrerpolicy="no-referrer"
   />
   
   <link rel="stylesheet" href="dash.css" />
 
-  <style>
-    /* Basic styles for profile modal */
-    #profile-btn {
-      background: transparent;
-      border: none;
-      cursor: pointer;
-      font-size: 28px;
-      margin-left: 10px;
-      vertical-align: middle;
-      user-select: none;
-      color: #00796b;
-      transition: color 0.3s ease;
-    }
-    #profile-btn:hover {
-      color: #004d40;
-    }
-    #profile-display-name {
-      font-weight: 600;
-      margin-left: 6px;
-      color: #004d40;
-      vertical-align: middle;
-    }
-    #profile-modal {
-      display: none;
-      position: fixed;
-      top: 0; left: 0;
-      width: 100vw; height: 100vh;
-      background: rgba(0,0,0,0.6);
-      justify-content: center;
-      align-items: center;
-      z-index: 3000;
-    }
-    #profile-modal.active {
-      display: flex;
-    }
-    #profile-modal > div {
-      background: white;
-      border-radius: 16px;
-      padding: 30px;
-      width: 320px;
-      max-width: 90vw;
-      text-align: center;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.25);
-    }
-    #profile-emoji {
-      font-size: 64px;
-      margin-bottom: 20px;
-      user-select: none;
-    }
-    #profile-modal label {
-      display: block;
-      margin-bottom: 10px;
-      font-weight: 600;
-      color: #004d40;
-      user-select: none;
-      text-align: left;
-    }
-    #profile-modal select, #profile-modal input[type="text"] {
-      padding: 8px 12px;
-      border-radius: 8px;
-      border: 1px solid #00796b;
-      font-size: 16px;
-      width: 100%;
-      margin-bottom: 20px;
-      box-sizing: border-box;
-      user-select: none;
-      cursor: pointer;
-    }
-    #profile-modal button {
-      padding: 10px 22px;
-      border: none;
-      border-radius: 24px;
-      font-weight: 700;
-      font-size: 16px;
-      cursor: pointer;
-      margin-top: 12px;
-      user-select: none;
-      color: white;
-      background: linear-gradient(135deg, #26a69a, #00796b);
-      box-shadow: 0 6px 20px rgba(38,166,154,0.5);
-      transition: background 0.25s ease;
-    }
-    #profile-modal button#close-profile-btn {
-      background: #ef5350;
-      margin-left: 10px;
-      box-shadow: 0 6px 20px rgba(239,83,80,0.5);
-    }
-    #profile-modal button:hover {
-      filter: brightness(1.1);
-    }
-  </style>
+  <!-- Firebase Storage -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
 </head>
 <body>
   <div class="container">
-    <h2>
-      Welcome, <span id="username-display"></span>! 
-      <button id="profile-btn" title="Edit Profile" aria-label="Edit Profile" style="font-size:28px; background:none; border:none; cursor:pointer; margin-left:10px; vertical-align:middle; user-select:none; color:#00796b;">
-        <span id="profile-emoji-display">👤</span>
-      </button>
-    </h2>
+    <h2>Welcome, <span id="username-display"></span>! 😊</h2>
 
+    <!-- Profile Picture Section -->
+    <div id="profile-pic-section" style="margin-bottom: 20px;">
+      <h3>Your Profile Picture</h3>
+      <img
+        id="profile-pic-preview"
+        src="default-profile.png"
+        alt="Profile Picture"
+        style="width:120px; height:120px; border-radius:50%; object-fit:cover; border:2px solid #ccc; display:block; margin-bottom:10px;"
+      />
+      <input type="file" id="profile-pic-input" accept="image/*" />
+      <button id="upload-profile-pic" style="margin-top: 10px;">Upload</button>
+      <p id="upload-status" style="color: green; font-weight: bold;"></p>
+    </div>
 
     <div class="top-buttons">
       <button onclick="goToAddFriends()" class="add"><i class="fa-solid fa-user-plus"></i> Add Friends</button>
@@ -128,33 +49,6 @@
     <div id="friend-requests"></div>
   </div>
 
-  <!-- Profile Modal -->
-  <div id="profile-modal" role="dialog" aria-modal="true" aria-labelledby="profile-modal-title">
-    <div>
-      <h3 id="profile-modal-title">Edit Your Profile</h3>
-      <div id="profile-emoji">👤</div>
-
-      <label for="emoji-select">Choose your avatar emoji:</label>
-      <select id="emoji-select" aria-describedby="emoji-desc">
-        <option value="👤">👤 Default</option>
-        <option value="😎">😎 Cool</option>
-        <option value="🤠">🤠 Cowboy</option>
-        <option value="🦸">🦸 Superhero</option>
-        <option value="🐱">🐱 Cat</option>
-        <option value="🐵">🐵 Monkey</option>
-        <option value="👽">👽 Alien</option>
-        <option value="🤖">🤖 Robot</option>
-        <option value="🧙">🧙 Wizard</option>
-      </select>
-      
-      <label for="display-name-input">Display Name:</label>
-      <input type="text" id="display-name-input" placeholder="Enter display name" maxlength="30" />
-
-      <button id="save-profile-btn">Save Profile</button>
-      <button id="close-profile-btn">Cancel</button>
-    </div>
-  </div>
-
   <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
@@ -167,101 +61,69 @@
       window.location.href = "index.html";
     }
 
-    const db = firebase.firestore();
-
-    const usernameDisplay = document.getElementById("username-display");
-    const profileBtn = document.getElementById("profile-btn");
-    const profileModal = document.getElementById("profile-modal");
-    const profileEmojiDiv = document.getElementById("profile-emoji");
-    const emojiSelect = document.getElementById("emoji-select");
-    const displayNameInput = document.getElementById("display-name-input");
-    const saveProfileBtn = document.getElementById("save-profile-btn");
-    const closeProfileBtn = document.getElementById("close-profile-btn");
-    const profileDisplayNameSpan = document.getElementById("profile-display-name");
-    const profileEmojiDisplaySpan = document.getElementById("profile-emoji-display");
-
-    // Load user profile info from Firestore and display
-    function loadUserProfile() {
-      db.collection("users").doc(currentUser).get().then(doc => {
-        if (doc.exists) {
-          const data = doc.data();
-          const displayName = data.displayName || currentUser;
-          const emoji = data.emoji || "👤";
-          
-          usernameDisplay.textContent = displayName;
-          profileDisplayNameSpan.textContent = ""; // We use usernameDisplay for name now
-          profileEmojiDisplaySpan.textContent = emoji;
-        } else {
-          usernameDisplay.textContent = currentUser;
-          profileEmojiDisplaySpan.textContent = "👤";
-        }
-      }).catch(err => {
-        console.error("Failed to load profile:", err);
-        usernameDisplay.textContent = currentUser;
-        profileEmojiDisplaySpan.textContent = "👤";
-      });
-    }
-
-    // Open modal and prefill fields
-    function openProfileModal() {
-      db.collection("users").doc(currentUser).get().then(doc => {
-        let emoji = "👤";
-        let displayName = currentUser;
-        if (doc.exists) {
-          emoji = doc.data().emoji || emoji;
-          displayName = doc.data().displayName || displayName;
-        }
-        emojiSelect.value = emoji;
-        displayNameInput.value = displayName;
-        profileEmojiDiv.textContent = emoji;
-        profileModal.classList.add("active");
-        displayNameInput.focus();
-      });
-    }
-
-    // Close modal
-    function closeProfileModal() {
-      profileModal.classList.remove("active");
-    }
-
-    // Update emoji preview on select change
-    emojiSelect.addEventListener("change", () => {
-      profileEmojiDiv.textContent = emojiSelect.value;
-    });
-
-    // Save profile data to Firestore
-    saveProfileBtn.addEventListener("click", () => {
-      const newEmoji = emojiSelect.value;
-      const newDisplayName = displayNameInput.value.trim();
-
-      if (!newDisplayName) {
-        alert("Display name cannot be empty.");
-        displayNameInput.focus();
-        return;
-      }
-
-      db.collection("users").doc(currentUser).set({
-        emoji: newEmoji,
-        displayName: newDisplayName
-      }, { merge: true })
-      .then(() => {
-        alert("Profile saved!");
-        loadUserProfile();
-        closeProfileModal();
-      })
-      .catch(err => {
-        console.error("Failed to save profile:", err);
-        alert("Failed to save profile. Please try again.");
-      });
-    });
-
-    closeProfileBtn.addEventListener("click", closeProfileModal);
-    profileBtn.addEventListener("click", openProfileModal);
-
-    // Existing code from your original script for friends and requests...
+    document.getElementById("username-display").textContent = currentUser;
 
     const friendList = document.getElementById("friend-list");
     const friendRequestsDiv = document.getElementById("friend-requests");
+
+    // Profile Picture Elements
+    const profilePicInput = document.getElementById('profile-pic-input');
+    const profilePicPreview = document.getElementById('profile-pic-preview');
+    const uploadButton = document.getElementById('upload-profile-pic');
+    const uploadStatus = document.getElementById('upload-status');
+
+    let selectedFile = null;
+
+    profilePicInput.addEventListener('change', (e) => {
+      selectedFile = e.target.files[0];
+      if (selectedFile) {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+          profilePicPreview.src = event.target.result;
+        };
+        reader.readAsDataURL(selectedFile);
+      }
+    });
+
+    uploadButton.addEventListener('click', () => {
+      if (!selectedFile) {
+        alert("Please select an image first!");
+        return;
+      }
+
+      uploadStatus.style.color = "black";
+      uploadStatus.textContent = "Uploading...";
+      
+      // Firebase Storage reference
+      const storageRef = firebase.storage().ref();
+      const userPicRef = storageRef.child(`profile_pictures/${currentUser}.jpg`);
+
+      userPicRef.put(selectedFile).then(snapshot => {
+        return snapshot.ref.getDownloadURL();
+      }).then(downloadURL => {
+        // Save URL to Firestore user profile document
+        return db.collection('users').doc(currentUser).set({
+          profilePicURL: downloadURL
+        }, { merge: true });
+      }).then(() => {
+        uploadStatus.style.color = "green";
+        uploadStatus.textContent = "Upload successful!";
+      }).catch(err => {
+        console.error("Upload failed:", err);
+        uploadStatus.style.color = "red";
+        uploadStatus.textContent = "Upload failed.";
+      });
+    });
+
+    // Load existing profile pic on page load
+    db.collection('users').doc(currentUser).get().then(doc => {
+      if(doc.exists) {
+        const data = doc.data();
+        if(data.profilePicURL) {
+          profilePicPreview.src = data.profilePicURL;
+        }
+      }
+    });
 
     function loadFriends() {
       friendList.innerHTML = "";
@@ -281,7 +143,7 @@
             const friendUsername = doc.data().friend;
 
             db.collection("users").doc(friendUsername).get().then(friendDoc => {
-              const friendName = friendDoc.exists ? (friendDoc.data().displayName || friendUsername) : friendUsername;
+              const friendName = friendDoc.exists ? (friendDoc.data().name || friendUsername) : friendUsername;
 
               const btn = document.createElement("button");
               btn.className = "friend-button";
@@ -408,11 +270,8 @@
       window.location.href = "index.html";
     }
 
-    // Initial loading
-    loadUserProfile();
     loadFriends();
     loadFriendRequests();
-
   </script>
 </body>
 </html>
