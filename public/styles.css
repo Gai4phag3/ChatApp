@@ -11,7 +11,7 @@ html, body {
 
 body {
   font-family: 'Segoe UI', sans-serif;
-  background-color: #eaf3fc;
+  background: linear-gradient(135deg, #eaf3fc, #d4e8fa);
   color: #1a1a1a;
   display: flex;
   flex-direction: column;
@@ -20,14 +20,14 @@ body {
 
 /* === Main Container === */
 .container {
-  background: #ffffff;
   flex: 1;
   width: 100%;
-  padding: 25px 30px;
-  border-radius: 0; /* Remove rounded corners for full-page look */
-  box-shadow: none; /* Remove shadow for full-page feel */
   display: flex;
   flex-direction: column;
+  background: #ffffff;
+  padding: 25px 30px;
+  border-radius: 12px 12px 0 0;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
 }
 
 /* === Headings === */
@@ -35,13 +35,16 @@ h2 {
   text-align: center;
   margin-bottom: 25px;
   color: #0d47a1;
+  font-size: 1.8rem;
+  font-weight: bold;
 }
 
 h3 {
   margin: 30px 0 10px;
-  color: #333;
-  border-bottom: 1px solid #ddd;
-  padding-bottom: 5px;
+  color: #222;
+  border-bottom: 2px solid #bbdefb;
+  padding-bottom: 6px;
+  font-size: 1.2rem;
 }
 
 /* === Form Inputs === */
@@ -53,17 +56,20 @@ input[type="password"] {
   border: 1px solid #90caf9;
   border-radius: 25px;
   font-size: 16px;
-  transition: border-color 0.2s ease;
+  transition: all 0.2s ease;
+  background-color: #f9fcff;
 }
 
 input:focus {
   border-color: #2196f3;
+  background-color: white;
+  box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.2);
   outline: none;
 }
 
 /* === Buttons === */
 button {
-  background-color: #2196f3;
+  background: linear-gradient(135deg, #2196f3, #1976d2);
   color: white;
   border: none;
   padding: 12px;
@@ -72,11 +78,13 @@ button {
   font-weight: bold;
   border-radius: 25px;
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  transition: all 0.2s ease;
 }
 
 button:hover {
-  background-color: #1976d2;
+  background: linear-gradient(135deg, #1976d2, #1565c0);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(25, 118, 210, 0.3);
 }
 
 /* === Inline Action Buttons === */
@@ -85,20 +93,22 @@ button:hover {
   font-size: 14px;
   border-radius: 20px;
   border: none;
-  background-color: #2196f3;
+  background: linear-gradient(135deg, #2196f3, #1976d2);
   color: white;
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  transition: all 0.2s ease;
 }
 
 .inline-button:hover {
-  background-color: #1976d2;
+  background: linear-gradient(135deg, #1976d2, #1565c0);
+  transform: translateY(-1px);
 }
 
 /* === Links === */
 a {
-  color: #2196f3;
+  color: #1976d2;
   text-decoration: none;
+  font-weight: 500;
 }
 
 a:hover {
@@ -113,20 +123,23 @@ p {
 /* === Chat Message Area === */
 #messages {
   list-style: none;
-  padding: 0;
+  padding: 15px;
   margin: 0 0 15px 0;
   flex: 1;
   overflow-y: auto;
+  background-color: #f4faff;
+  border-radius: 10px;
 }
 
 .message {
-  margin-bottom: 10px;
+  margin-bottom: 12px;
   padding: 10px 15px;
   border-radius: 20px;
   max-width: 75%;
   position: relative;
   word-wrap: break-word;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+  animation: fadeIn 0.3s ease;
 }
 
 .message .sender {
@@ -187,13 +200,14 @@ ul#userList {
   justify-content: space-between;
   align-items: center;
   border-bottom: 1px solid #e3f2fd;
-  transition: background-color 0.2s ease;
+  transition: background-color 0.2s ease, transform 0.1s ease;
   cursor: pointer;
 }
 
 #friendList li:hover,
 #userList li:hover {
   background-color: #f0f7ff;
+  transform: scale(1.01);
 }
 
 /* === Dashboard Top Bar === */
@@ -209,16 +223,18 @@ ul#userList {
 #settingsBtn {
   padding: 8px 12px;
   font-size: 14px;
-  background-color: #2196f3;
+  background: linear-gradient(135deg, #2196f3, #1976d2);
   border: none;
   color: white;
   border-radius: 20px;
   cursor: pointer;
+  transition: all 0.2s ease;
 }
 
 #addFriendBtn:hover,
 #settingsBtn:hover {
-  background-color: #1976d2;
+  background: linear-gradient(135deg, #1976d2, #1565c0);
+  transform: translateY(-1px);
 }
 
 /* === Settings Modal === */
@@ -269,10 +285,17 @@ ul#userList {
   margin-left: 8px;
 }
 
+/* === Animations === */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 /* === Responsive Design === */
 @media (max-width: 600px) {
   .container {
     padding: 15px;
+    border-radius: 0;
   }
 
   #topBar {
