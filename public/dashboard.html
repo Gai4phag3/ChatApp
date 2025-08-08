@@ -161,12 +161,14 @@
     const friendList = document.getElementById("friend-list");
     const friendRequestsDiv = document.getElementById("friend-requests");
 
+    // Live friend list
     function loadFriends() {
       friendList.innerHTML = "";
+
       db.collection("friends")
         .where("user", "==", currentUser)
         .where("accepted", "==", true)
-        .onSnapshot(snapshot => { // 🔹 now listens in real-time
+        .onSnapshot(snapshot => {
           friendList.innerHTML = "";
 
           if (snapshot.empty) {
@@ -190,32 +192,8 @@
 
               friendList.appendChild(btn);
 
-              // 🔹 start watching for unread messages for this friend
               watchUnreadMessages(friendUsername);
             });
-          });
-        });
-    }
-
-    function watchUnreadMessages(friendUsername) {
-      const chatId = [currentUser, friendUsername].sort().join('_');
-
-      db.collection("chats")
-        .doc(chatId)
-        .collection("messages")
-        .orderBy("timestamp", "desc")
-        .limit(1)
-        .onSnapshot(snapshot => {
-          snapshot.forEach(doc => {
-            const data = doc.data();
-
-            if (data.sender !== currentUser) {
-              const notifEl = document.getElementById(`notif-${friendUsername}`);
-              if (notifEl) {
-                notifEl.style.display = "inline-block";
-                notifEl.textContent = "1"; // simple badge for now
-              }
-            }
           });
         });
     }
@@ -275,8 +253,45 @@
     }
 
     function openChatWith(friendUsername) {
+      const chatId = [currentUser, friendUsername].sort().join('_');
+
+      // Update last read timestamp
+      db.collection("lastRead")
+        .doc(chatId + "_" + currentUser)
+        .set({ lastRead: Date.now() });
+
       localStorage.setItem("chatWith", friendUsername);
       window.location.href = "chat.html";
+    }
+
+    function watchUnreadMessages(friendUsername) {
+      const chatId = [currentUser, friendUsername].sort().join('_');
+
+      db.collection("lastRead")
+        .doc(chatId + "_" + currentUser)
+        .onSnapshot(lastReadDoc => {
+          const lastRead = lastReadDoc.exists ? lastReadDoc.data().lastRead : 0;
+
+          db.collection("chats")
+            .doc(chatId)
+            .collection("messages")
+            .orderBy("timestamp", "desc")
+            .limit(1)
+            .onSnapshot(snapshot => {
+              snapshot.forEach(doc => {
+                const data = doc.data();
+                const notifEl = document.getElementById(`notif-${friendUsername}`);
+                if (!notifEl) return;
+
+                if (data.sender !== currentUser && data.timestamp > lastRead) {
+                  notifEl.style.display = "inline-block";
+                  notifEl.textContent = "1";
+                } else {
+                  notifEl.style.display = "none";
+                }
+              });
+            });
+        });
     }
 
     function goToAddFriends() {
