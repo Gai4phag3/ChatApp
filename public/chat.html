@@ -6,6 +6,25 @@
   <link rel="icon" href="/favicon.png" type="image/x-icon" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link rel="stylesheet" href="chat.css" />
+  <style>
+    /* Add styling for image message */
+    .message img {
+      max-width: 200px;
+      max-height: 150px;
+      border-radius: 12px;
+      display: block;
+      margin-top: 6px;
+    }
+    /* Image upload button style */
+    #image-upload-btn {
+      background: none;
+      border: none;
+      font-size: 20px;
+      margin-left: 8px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+  </style>
 </head>
 <body>
   <div class="container">
@@ -24,11 +43,16 @@
     <form id="form">
       <input id="input" autocomplete="off" placeholder="Type a message..." />
       <button type="button" id="emoji-btn" title="Insert emoji">😊</button>
+      <!-- New image upload button -->
+      <button type="button" id="image-upload-btn" title="Send Image">🖼️</button>
       <button type="submit">➤</button>
 
       <div id="emoji-picker" aria-label="Emoji picker" role="list">
         <!-- Emojis inserted by JS -->
       </div>
+
+      <!-- Hidden file input for image upload -->
+      <input type="file" id="image-input" accept="image/*" style="display:none" />
     </form>
   </div>
 
@@ -49,6 +73,8 @@
     const messages = document.getElementById("messages");
     const emojiBtn = document.getElementById("emoji-btn");
     const emojiPicker = document.getElementById("emoji-picker");
+    const imageUploadBtn = document.getElementById("image-upload-btn");
+    const imageInput = document.getElementById("image-input");
 
     const username = localStorage.getItem("username");
     const chatWith = localStorage.getItem("chatWith");
@@ -102,7 +128,19 @@
 
       const bubble = document.createElement("div");
       bubble.className = "message";
-      bubble.innerHTML = `${text}<div class="time">${time}</div>`;
+
+      // Detect if message contains image data (starts with "data:image/")
+      if (text.startsWith("data:image/")) {
+        const img = document.createElement("img");
+        img.src = text;
+        bubble.appendChild(img);
+        const timeDiv = document.createElement("div");
+        timeDiv.className = "time";
+        timeDiv.textContent = time;
+        bubble.appendChild(timeDiv);
+      } else {
+        bubble.innerHTML = `${text}<div class="time">${time}</div>`;
+      }
 
       if (sender === username) {
         wrapper.appendChild(bubble);
@@ -203,6 +241,64 @@
         emojiPicker.style.display = "none";
       }
     });
+
+    // Image upload button click opens file picker
+    imageUploadBtn.addEventListener("click", () => {
+      imageInput.click();
+    });
+
+    // Handle image file selected
+    imageInput.addEventListener("change", (event) => {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      if (!file.type.startsWith("image/")) {
+        alert("Please select a valid image file.");
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        sendImageMessage(e.target.result);
+      };
+      reader.readAsDataURL(file);
+
+      // Clear the input for next use
+      imageInput.value = "";
+    });
+
+    // Handle paste events on input for image
+    input.addEventListener("paste", (event) => {
+      const items = (event.clipboardData || event.originalEvent.clipboardData).items;
+      for (const item of items) {
+        if (item.type.indexOf("image") === 0) {
+          event.preventDefault();
+          const file = item.getAsFile();
+          const reader = new FileReader();
+          reader.onload = function(e) {
+            sendImageMessage(e.target.result);
+          };
+          reader.readAsDataURL(file);
+          break;
+        }
+      }
+    });
+
+    function sendImageMessage(imageDataUrl) {
+      const messageData = {
+        sender: username,
+        text: imageDataUrl,
+        timestamp: Date.now(),
+        chatId: chatId
+      };
+
+      socket.emit("chat message", messageData);
+
+      db.collection("chats")
+        .doc(chatId)
+        .collection("messages")
+        .add(messageData);
+    }
   </script>
 </body>
 </html>
