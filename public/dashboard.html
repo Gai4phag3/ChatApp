@@ -3,7 +3,7 @@
 <head>
   <title>Dashboard</title>
   <link rel="icon" href="/favicon.png" type="image/x-icon" />
-  
+
   <!-- Font Awesome CDN for icons -->
   <link
     rel="stylesheet"
@@ -14,104 +14,83 @@
   />
   
   <link rel="stylesheet" href="dash.css" />
+  
   <style>
-    /* Friend button with profile pic */
+    /* Profile pic top right container */
+    .profile-container {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      overflow: hidden;
+      border: 2px solid #007bff;
+      cursor: pointer;
+      transition: box-shadow 0.3s ease;
+      background: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    .profile-container:hover {
+      box-shadow: 0 0 10px #007bffaa;
+    }
+    .profile-container img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    /* Friend buttons with profile pic */
     .friend-button {
       display: flex;
       align-items: center;
       gap: 10px;
+      margin: 8px 0;
       padding: 8px 12px;
+      font-size: 1rem;
       border: none;
-      background: #eee;
-      border-radius: 25px;
+      border-radius: 8px;
+      background: #f0f0f0;
       cursor: pointer;
-      font-size: 16px;
-      position: relative;
+      transition: background-color 0.2s ease;
+      width: 100%;
+      text-align: left;
     }
-
     .friend-button:hover {
-      background: #ddd;
+      background-color: #e0e0ff;
     }
-
-    .friend-pic {
-      width: 32px;
-      height: 32px;
+    .friend-button img {
+      width: 40px;
+      height: 40px;
       border-radius: 50%;
       object-fit: cover;
-      border: 1.5px solid #888;
+      border: 1.5px solid #007bff;
+      flex-shrink: 0;
     }
-
-    #username-display {
+    .notif {
+      margin-left: auto;
+      background-color: #ff3b30;
+      color: white;
       font-weight: bold;
-      vertical-align: middle;
-    }
-
-    /* Current user profile pic next to welcome */
-    #user-profile-pic {
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      object-fit: cover;
-      border: 2px solid #555;
-      vertical-align: middle;
-      margin-left: 10px;
-    }
-
-    /* Modal styles (from your existing dash.css or inline here for example) */
-    .modal {
-      display: none; 
-      position: fixed; 
-      z-index: 100; 
-      left: 0;
-      top: 0;
-      width: 100%; 
-      height: 100%; 
-      overflow: auto; 
-      background-color: rgba(0,0,0,0.4);
-    }
-
-    .modal-content {
-      background-color: #fefefe;
-      margin: 10% auto; 
-      padding: 20px;
-      border: 1px solid #888;
-      width: 300px; 
-      border-radius: 10px;
+      font-size: 0.8rem;
+      padding: 2px 6px;
+      border-radius: 12px;
+      display: none;
+      min-width: 18px;
       text-align: center;
-      position: relative;
-    }
-
-    .close {
-      color: #aaa;
-      position: absolute;
-      top: 10px;
-      right: 15px;
-      font-size: 28px;
-      font-weight: bold;
-      cursor: pointer;
-    }
-
-    .close:hover {
-      color: black;
-    }
-
-    #uploadStatus {
-      margin-top: 12px;
-      font-weight: bold;
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <h2>
-      Welcome, <span id="username-display"></span>
-      <img id="user-profile-pic" src="default-profile.png" alt="Your Profile Pic" />
-      😊
-    </h2>
+    <h2>Welcome, <span id="username-display"></span>! 😊</h2>
 
     <div class="top-buttons">
       <button onclick="goToAddFriends()" class="add"><i class="fa-solid fa-user-plus"></i> Add Friends</button>
-      <button id="profileBtn" class="settings"><i class="fa-solid fa-user"></i> Profile</button>
       <button onclick="goToSettings()" class="settings"><i class="fa-solid fa-gear"></i> Settings</button>
       <button onclick="logout()" class="logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
     </div>
@@ -123,21 +102,14 @@
     <div id="friend-requests"></div>
   </div>
 
-  <!-- Profile Modal -->
-  <div id="profileModal" class="modal">
-    <div class="modal-content">
-      <span class="close" id="closeProfileModal">&times;</span>
-      <h3>Upload Profile Picture</h3>
-      <input type="file" id="profilePicInput" accept="image/*" />
-      <button id="uploadProfilePicBtn">Upload</button>
-      <p id="uploadStatus"></p>
-    </div>
+  <!-- Profile pic top right -->
+  <div class="profile-container" onclick="goToSettings()" title="Go to Settings">
+    <img id="profile-pic-topright" src="default-profile.png" alt="Profile Picture" />
   </div>
 
   <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
   <script src="firebase-config.js"></script>
 
   <script>
@@ -151,81 +123,22 @@
 
     const friendList = document.getElementById("friend-list");
     const friendRequestsDiv = document.getElementById("friend-requests");
+    const profilePicTopRight = document.getElementById("profile-pic-topright");
 
-    const profileModal = document.getElementById("profileModal");
-    const profileBtn = document.getElementById("profileBtn");
-    const closeProfileModal = document.getElementById("closeProfileModal");
-    const uploadProfilePicBtn = document.getElementById("uploadProfilePicBtn");
-    const profilePicInput = document.getElementById("profilePicInput");
-    const uploadStatus = document.getElementById("uploadStatus");
-    const userProfilePicEl = document.getElementById("user-profile-pic");
-
-    // Show modal when profile button clicked
-    profileBtn.onclick = () => {
-      uploadStatus.textContent = "";
-      uploadStatus.style.color = "black";
-      profilePicInput.value = "";
-      profileModal.style.display = "block";
-    };
-
-    // Close modal
-    closeProfileModal.onclick = () => {
-      profileModal.style.display = "none";
-    };
-
-    // Close modal if clicking outside modal content
-    window.onclick = (event) => {
-      if (event.target == profileModal) {
-        profileModal.style.display = "none";
-      }
-    };
-
-    // Upload profile picture
-    uploadProfilePicBtn.onclick = () => {
-      const file = profilePicInput.files[0];
-      if (!file) {
-        alert("Please select a file to upload.");
-        return;
-      }
-
-      uploadStatus.textContent = "Uploading...";
-      uploadStatus.style.color = "black";
-
-      const storageRef = firebase.storage().ref();
-      const fileRef = storageRef.child(`profilePics/${currentUser}.jpg`);
-
-      fileRef.put(file).then(() => {
-        return fileRef.getDownloadURL();
-      }).then((url) => {
-        return db.collection("users").doc(currentUser).set({
-          profilePicURL: url
-        }, { merge: true });
-      }).then(() => {
-        uploadStatus.textContent = "Upload successful! ✅";
-        uploadStatus.style.color = "green";
-
-        // Update current user's profile pic immediately
-        userProfilePicEl.src = URL.createObjectURL(file);
-
-        // Refresh friend list to show new pic for current user in friends' lists
-        loadFriends();
-      }).catch((error) => {
-        console.error("Upload failed:", error);
-        uploadStatus.textContent = "Upload failed. Try again.";
-        uploadStatus.style.color = "red";
-      });
-    };
-
-    // Load and show current user's profile pic next to welcome
-    db.collection("users").doc(currentUser).get().then(doc => {
-      if (doc.exists) {
-        const data = doc.data();
-        if (data.profilePicURL) {
-          userProfilePicEl.src = data.profilePicURL;
+    // Load current user's profile picture
+    function loadCurrentUserProfilePic() {
+      db.collection("users").doc(currentUser).get().then(doc => {
+        if (doc.exists && doc.data().profilePicture) {
+          profilePicTopRight.src = doc.data().profilePicture;
+        } else {
+          profilePicTopRight.src = "default-profile.png"; // fallback
         }
-      }
-    });
+      }).catch(() => {
+        profilePicTopRight.src = "default-profile.png";
+      });
+    }
 
+    // Load friend list and display profile pics
     function loadFriends() {
       friendList.innerHTML = "";
 
@@ -244,16 +157,14 @@
             const friendUsername = doc.data().friend;
 
             db.collection("users").doc(friendUsername).get().then(friendDoc => {
-              const friendName = friendDoc.exists ? (friendDoc.data().name || friendUsername) : friendUsername;
-              const profilePicURL = friendDoc.exists && friendDoc.data().profilePicURL
-                ? friendDoc.data().profilePicURL
-                : 'default-profile.png';
+              const friendData = friendDoc.exists ? friendDoc.data() : {};
+              const friendName = friendData.name || friendUsername;
+              const friendPic = friendData.profilePicture || "default-profile.png";
 
               const btn = document.createElement("button");
               btn.className = "friend-button";
-
               btn.innerHTML = `
-                <img src="${profilePicURL}" alt="${friendName} Profile Pic" class="friend-pic" />
+                <img src="${friendPic}" alt="${friendName}'s profile picture" />
                 <span>${friendName}</span>
                 <span class="notif" id="notif-${friendUsername}">0</span>
               `;
@@ -376,6 +287,7 @@
       window.location.href = "index.html";
     }
 
+    loadCurrentUserProfilePic();
     loadFriends();
     loadFriendRequests();
   </script>
