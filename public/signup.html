@@ -37,13 +37,38 @@
     }
 
     /* Inputs */
-    .popup-container input {
+    .popup-container input[type="text"],
+    .popup-container input[type="password"] {
       width: 100%;
       padding: 10px;
       margin: 8px 0;
       border: none;
       border-radius: 6px;
       font-size: 14px;
+    }
+
+    /* Privacy policy checkbox container */
+    .checkbox-container {
+      display: flex;
+      align-items: center;
+      margin: 12px 0;
+      font-size: 13px;
+      user-select: none;
+    }
+
+    .checkbox-container input[type="checkbox"] {
+      margin-right: 8px;
+      width: 16px;
+      height: 16px;
+      cursor: pointer;
+    }
+
+    .checkbox-container a {
+      color: #ffcc70;
+      text-decoration: none;
+    }
+    .checkbox-container a:hover {
+      text-decoration: underline;
     }
 
     /* Button */
@@ -68,11 +93,11 @@
       margin-top: 15px;
       font-size: 13px;
     }
-    .popup-container a {
+    .popup-container a.login-link {
       color: #ffcc70;
       text-decoration: none;
     }
-    .popup-container a:hover {
+    .popup-container a.login-link:hover {
       text-decoration: underline;
     }
 
@@ -89,8 +114,16 @@
     <input type="text" id="name" placeholder="Full Name (can be repeated)" />
     <input type="text" id="username" placeholder="Username (must be unique)" />
     <input type="password" id="password" placeholder="Password" />
+    
+    <div class="checkbox-container">
+      <input type="checkbox" id="privacyPolicy" />
+      <label for="privacyPolicy">
+        I agree to the <a href="privacy-policy.html" target="_blank" rel="noopener noreferrer">Privacy Policy</a>
+      </label>
+    </div>
+    
     <button onclick="signup()">Sign Up</button>
-    <p>Already have an account? <a href="login.html">Login</a></p>
+    <p>Already have an account? <a href="login.html" class="login-link">Login</a></p>
   </div>
 
   <!-- Firebase -->
@@ -103,9 +136,14 @@
       const name = document.getElementById("name").value.trim();
       const username = document.getElementById("username").value.trim();
       const password = document.getElementById("password").value;
+      const privacyChecked = document.getElementById("privacyPolicy").checked;
 
       if (!name || !username || !password) {
         alert("Please fill in all fields.");
+        return;
+      }
+      if (!privacyChecked) {
+        alert("You must agree to the Privacy Policy to sign up.");
         return;
       }
 
