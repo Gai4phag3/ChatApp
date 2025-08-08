@@ -16,39 +16,7 @@
   <link rel="stylesheet" href="dash.css" />
   
   <style>
-    /* Profile pic top right container */
-    .profile-container {
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      width: 60px;
-      height: 60px;
-      border-radius: 50%;
-      overflow: hidden;
-      border: 2px solid #007bff;
-      cursor: pointer;
-      transition: box-shadow 0.3s ease;
-      background: #fff;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-    }
-    .profile-container:hover {
-      box-shadow: 0 0 10px #007bffaa;
-    }
-    .profile-container img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-    }
-
-    /* Friend buttons with profile pic */
     .friend-button {
-      display: flex;
-      align-items: center;
-      gap: 10px;
       margin: 8px 0;
       padding: 8px 12px;
       font-size: 1rem;
@@ -59,20 +27,14 @@
       transition: background-color 0.2s ease;
       width: 100%;
       text-align: left;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
     }
     .friend-button:hover {
       background-color: #e0e0ff;
     }
-    .friend-button img {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      object-fit: cover;
-      border: 1.5px solid #007bff;
-      flex-shrink: 0;
-    }
     .notif {
-      margin-left: auto;
       background-color: #ff3b30;
       color: white;
       font-weight: bold;
@@ -102,11 +64,6 @@
     <div id="friend-requests"></div>
   </div>
 
-  <!-- Profile pic top right -->
-  <div class="profile-container" onclick="goToSettings()" title="Go to Settings">
-    <img id="profile-pic-topright" src="default-profile.png" alt="Profile Picture" />
-  </div>
-
   <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
@@ -123,22 +80,7 @@
 
     const friendList = document.getElementById("friend-list");
     const friendRequestsDiv = document.getElementById("friend-requests");
-    const profilePicTopRight = document.getElementById("profile-pic-topright");
 
-    // Load current user's profile picture
-    function loadCurrentUserProfilePic() {
-      db.collection("users").doc(currentUser).get().then(doc => {
-        if (doc.exists && doc.data().profilePicture) {
-          profilePicTopRight.src = doc.data().profilePicture;
-        } else {
-          profilePicTopRight.src = "default-profile.png"; // fallback
-        }
-      }).catch(() => {
-        profilePicTopRight.src = "default-profile.png";
-      });
-    }
-
-    // Load friend list and display profile pics
     function loadFriends() {
       friendList.innerHTML = "";
 
@@ -157,14 +99,11 @@
             const friendUsername = doc.data().friend;
 
             db.collection("users").doc(friendUsername).get().then(friendDoc => {
-              const friendData = friendDoc.exists ? friendDoc.data() : {};
-              const friendName = friendData.name || friendUsername;
-              const friendPic = friendData.profilePicture || "default-profile.png";
+              const friendName = friendDoc.exists ? (friendDoc.data().name || friendUsername) : friendUsername;
 
               const btn = document.createElement("button");
               btn.className = "friend-button";
               btn.innerHTML = `
-                <img src="${friendPic}" alt="${friendName}'s profile picture" />
                 <span>${friendName}</span>
                 <span class="notif" id="notif-${friendUsername}">0</span>
               `;
@@ -287,7 +226,6 @@
       window.location.href = "index.html";
     }
 
-    loadCurrentUserProfilePic();
     loadFriends();
     loadFriendRequests();
   </script>
