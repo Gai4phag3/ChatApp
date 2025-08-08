@@ -44,7 +44,7 @@
 
   <section>
     <h2>1. Information We Collect</h2>
-    <p>When you create an account, we collect personal information such as your full name, username, and password. Your password is securely hashed before being stored to protect your security. We also collect information about your friends and messages to enable our chat services.</p>
+    <p>When you create an account, we collect personal information such as your full name, username, and password. To protect your security, your password is securely hashed using the <a href="https://github.com/dcodeIO/bcrypt.js" target="_blank" rel="noopener noreferrer">bcrypt.js</a> library on the client side before being stored.</p>
   </section>
 
   <section>
@@ -54,7 +54,8 @@
 
   <section>
     <h2>3. Password Security</h2>
-    <p>Your password is never stored in plain text. We use a strong hashing algorithm called <a href="https://github.com/dcodeIO/bcrypt.js" target="_blank" rel="noopener noreferrer">bcrypt</a> to hash your password on the client side before sending it to Firestore. This ensures your password is protected even if our database were to be compromised.</p>
+    <p>Your password is never stored in plain text. Using <a href="https://github.com/dcodeIO/bcrypt.js" target="_blank" rel="noopener noreferrer">bcrypt.js</a>, your password is hashed on the client side with a salt before transmission. This approach ensures that even if our database were compromised, your actual password remains protected.</p>
+    <p>During login, the entered password is hashed and compared with the stored hashed password to authenticate your access securely.</p>
   </section>
 
   <section>
@@ -64,7 +65,7 @@
       <li>Provide and maintain our services</li>
       <li>Enable you to connect and chat with friends</li>
       <li>Improve user experience</li>
-      <li>Secure your account</li>
+      <li>Secure your account and prevent unauthorized access</li>
     </ul>
   </section>
 
