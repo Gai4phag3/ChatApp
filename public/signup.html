@@ -138,6 +138,11 @@
         return;
       }
 
+      if (typeof bcrypt === "undefined") {
+        alert("bcrypt library is not loaded!");
+        return;
+      }
+
       try {
         // Check if username exists
         const doc = await db.collection("users").doc(username).get();
