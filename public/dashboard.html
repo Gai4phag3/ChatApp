@@ -45,6 +45,37 @@
       min-width: 18px;
       text-align: center;
     }
+    /* Buttons in friend requests and pending */
+    #friend-requests div, #pending-requests div {
+      margin: 8px 0;
+      padding: 8px 12px;
+      background: #fafafa;
+      border-radius: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    #friend-requests button, #pending-requests button {
+      border: none;
+      background: #007bff;
+      color: white;
+      border-radius: 6px;
+      padding: 6px 12px;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+    }
+    #friend-requests button:hover, #pending-requests button:hover {
+      background-color: #0056b3;
+    }
+    #pending-requests button {
+      background-color: #dc3545;
+    }
+    #pending-requests button:hover {
+      background-color: #a71d2a;
+    }
   </style>
 </head>
 <body>
@@ -57,11 +88,16 @@
       <button onclick="logout()" class="logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
     </div>
 
-    <h3>Your Friends</h3>
-    <div id="friend-list"></div>
+    <!-- Moved friend request stuff above friends -->
 
     <h3>Friend Requests</h3>
     <div id="friend-requests"></div>
+
+    <h3>Pending Friend Requests</h3>
+    <div id="pending-requests"></div>
+
+    <h3>Your Friends</h3>
+    <div id="friend-list"></div>
   </div>
 
   <!-- Firebase -->
@@ -80,6 +116,7 @@
 
     const friendList = document.getElementById("friend-list");
     const friendRequestsDiv = document.getElementById("friend-requests");
+    const pendingRequestsDiv = document.getElementById("pending-requests");
 
     function loadFriends() {
       friendList.innerHTML = "";
@@ -149,6 +186,39 @@
         });
     }
 
+    function loadPendingFriendRequests() {
+      pendingRequestsDiv.innerHTML = "";
+
+      db.collection("friends")
+        .where("user", "==", currentUser)
+        .where("accepted", "==", false)
+        .get()
+        .then(snapshot => {
+          if (snapshot.empty) {
+            pendingRequestsDiv.innerHTML = "<p>No pending friend requests sent. 😊</p>";
+            return;
+          }
+
+          snapshot.forEach(doc => {
+            const pendingFriend = doc.data().friend;
+
+            const div = document.createElement("div");
+            div.textContent = pendingFriend;
+
+            const cancelBtn = document.createElement("button");
+            cancelBtn.innerHTML = '<i class="fa-solid fa-xmark"></i> Cancel';
+            cancelBtn.onclick = () => cancelFriendRequest(doc.id);
+
+            div.appendChild(cancelBtn);
+            pendingRequestsDiv.appendChild(div);
+          });
+        })
+        .catch(err => {
+          console.error("Error loading pending friend requests:", err);
+          pendingRequestsDiv.innerHTML = "<p>Error loading pending requests.</p>";
+        });
+    }
+
     function acceptFriendRequest(requestDocId, requesterUsername) {
       db.collection("friends")
         .doc(requestDocId)
@@ -168,6 +238,22 @@
         .catch(err => {
           console.error("Error accepting friend request:", err);
           alert("Failed to accept friend request.");
+        });
+    }
+
+    function cancelFriendRequest(requestDocId) {
+      if (!confirm("Cancel this friend request?")) return;
+
+      db.collection("friends")
+        .doc(requestDocId)
+        .delete()
+        .then(() => {
+          alert("Friend request cancelled.");
+          loadPendingFriendRequests();
+        })
+        .catch(err => {
+          console.error("Error cancelling friend request:", err);
+          alert("Failed to cancel friend request.");
         });
     }
 
@@ -226,8 +312,10 @@
       window.location.href = "index.html";
     }
 
-    loadFriends();
+    // Load all sections on page load
     loadFriendRequests();
+    loadPendingFriendRequests();
+    loadFriends();
   </script>
 </body>
 </html>
