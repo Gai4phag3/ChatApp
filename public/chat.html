@@ -43,17 +43,15 @@
     <form id="form">
       <input id="input" autocomplete="off" placeholder="Type a message..." />
       <button type="button" id="emoji-btn" title="Insert emoji">😊</button>
-      <!-- New image upload button -->
-      <button type="button" id="image-upload-btn" title="Send Image">🖼️</button>
+      <!-- ADD CAMERA BUTTON HERE -->
+      <button type="button" id="camera-btn" title="Use Camera">📷</button>
       <button type="submit">➤</button>
 
       <div id="emoji-picker" aria-label="Emoji picker" role="list">
         <!-- Emojis inserted by JS -->
       </div>
-
-      <!-- Hidden file input for image upload -->
-      <input type="file" id="image-input" accept="image/*" style="display:none" />
     </form>
+
   </div>
 
   <!-- Firebase -->
@@ -78,6 +76,13 @@
 
     const username = localStorage.getItem("username");
     const chatWith = localStorage.getItem("chatWith");
+
+    const cameraBtn = document.getElementById("camera-btn");
+    const cameraModal = document.getElementById("camera-modal");
+    const cameraVideo = document.getElementById("camera-video");
+    const captureBtn = document.getElementById("capture-btn");
+    const closeCameraBtn = document.getElementById("close-camera-btn");
+
 
     if (!username || !chatWith) {
       alert("Missing user or chat partner.");
@@ -299,6 +304,60 @@
         .collection("messages")
         .add(messageData);
     }
+    // --- CAMERA HANDLER ---
+
+    let mediaStream = null;
+
+    cameraBtn.addEventListener("click", async () => {
+      try {
+        mediaStream = await navigator.mediaDevices.getUserMedia({ video: true });
+        cameraVideo.srcObject = mediaStream;
+        cameraModal.style.display = "flex";
+      } catch (err) {
+        alert("Could not access camera: " + err.message);
+      }
+    });
+
+    captureBtn.addEventListener("click", () => {
+      if (!mediaStream) return;
+
+      // Create a canvas to capture frame
+      const canvas = document.createElement("canvas");
+      canvas.width = cameraVideo.videoWidth;
+      canvas.height = cameraVideo.videoHeight;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(cameraVideo, 0, 0, canvas.width, canvas.height);
+
+      const dataUrl = canvas.toDataURL("image/png");
+      sendImageMessage(dataUrl);
+
+      // Stop camera and close modal
+      closeCamera();
+    });
+
+    closeCameraBtn.addEventListener("click", () => {
+      closeCamera();
+    });
+
+    function closeCamera() {
+      if (mediaStream) {
+        mediaStream.getTracks().forEach(track => track.stop());
+        mediaStream = null;
+      }
+      cameraModal.style.display = "none";
+    }
+
   </script>
+  <!-- Camera modal -->
+  <div id="camera-modal" role="dialog" aria-modal="true" aria-label="Camera capture" style="display:none; position: fixed; top:0; left:0; width:100vw; height:100vh; background: rgba(0,0,0,0.8); justify-content:center; align-items:center; flex-direction: column; z-index: 1000;">
+    <video id="camera-video" autoplay playsinline style="max-width: 90vw; max-height: 60vh; border-radius: 12px; background: #000;"></video>
+    <div>
+      <button id="capture-btn" style="margin:10px 5px 0; padding:8px 16px; font-size:16px; cursor:pointer; border-radius:6px; border:none; background:#007aff; color:#fff;">Capture</button>
+      <button id="close-camera-btn" style="margin:10px 5px 0; padding:8px 16px; font-size:16px; cursor:pointer; border-radius:6px; border:none; background:#007aff; color:#fff;">Close</button>
+    </div>
+  </div>
+  
 </body>
+
+
 </html>
