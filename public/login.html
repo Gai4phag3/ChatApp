@@ -98,16 +98,45 @@
   <script src="firebase-config.js"></script>
 
   <script>
+    // SHA-256 hashing function using Web Crypto API
+    async function sha256(message) {
+      const msgBuffer = new TextEncoder().encode(message);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
     async function login() {
       const username = document.getElementById("username").value.trim();
       const password = document.getElementById("password").value;
 
-      const doc = await db.collection("users").doc(username).get();
-      if (!doc.exists) return alert("User not found.");
-      if (doc.data().password !== password) return alert("Incorrect password.");
+      if (!username || !password) {
+        alert("Please fill in both fields.");
+        return;
+      }
 
-      localStorage.setItem("username", username);
-      window.location.href = "dashboard.html";
+      try {
+        const doc = await db.collection("users").doc(username).get();
+        if (!doc.exists) {
+          alert("User not found.");
+          return;
+        }
+
+        const hashedInput = await sha256(password);
+        const storedHashedPassword = doc.data().password;
+
+        if (hashedInput !== storedHashedPassword) {
+          alert("Incorrect password.");
+          return;
+        }
+
+        localStorage.setItem("username", username);
+        localStorage.setItem("name", doc.data().name);
+        window.location.href = "dashboard.html";
+      } catch (error) {
+        console.error("Login error:", error);
+        alert("Something went wrong. Please try again.");
+      }
     }
   </script>
 </body>
