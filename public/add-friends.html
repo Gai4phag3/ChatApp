@@ -2,28 +2,194 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Add Friends</title>
   <link rel="icon" href="/favicon.png" type="image/x-icon" />
-  <link rel="stylesheet" href="friends.css"/>
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+
+    * {
+      box-sizing: border-box;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(135deg, #f0f8ff, #dff6ff);
+      color: #222;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+      padding: 30px 15px;
+    }
+
+    .container {
+      background: #fff;
+      max-width: 480px;
+      width: 100%;
+      border-radius: 18px;
+      padding: 30px 25px;
+      box-shadow: 0 20px 40px rgba(0, 121, 255, 0.15);
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      text-align: center;
+    }
+
+    h2 {
+      margin: 0;
+      font-weight: 600;
+      font-size: 2.1rem;
+      color: #0b3d91;
+      letter-spacing: 1px;
+    }
+
+    p {
+      margin: 0;
+      font-weight: 600;
+      font-size: 1.1rem;
+      color: #444;
+    }
+
+    p span#usernameDisplay {
+      color: #888;
+      font-weight: 400;
+      font-size: 0.85rem;
+      margin-left: 6px;
+    }
+
+    #searchBar {
+      width: 100%;
+      padding: 12px 18px;
+      font-size: 1rem;
+      border-radius: 30px;
+      border: 2px solid #a0c8ff;
+      outline: none;
+      transition: border-color 0.3s ease;
+      box-shadow: 0 2px 8px rgba(33, 150, 243, 0.12);
+    }
+    #searchBar:focus {
+      border-color: #1976d2;
+      box-shadow: 0 4px 14px rgba(33, 150, 243, 0.3);
+    }
+
+    ul#userList {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      max-height: 320px;
+      overflow-y: auto;
+      border-radius: 14px;
+      box-shadow: 0 10px 20px rgba(33, 150, 243, 0.1);
+      background: #f9fbff;
+    }
+
+    ul#userList li {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 22px;
+      border-bottom: 1px solid #e0eaff;
+      transition: background-color 0.25s ease;
+      cursor: default;
+    }
+    ul#userList li:hover {
+      background-color: #e6f0ff;
+    }
+
+    ul#userList li strong {
+      font-size: 1rem;
+      color: #0d47a1;
+    }
+    ul#userList li small {
+      color: #658db8;
+      font-weight: 400;
+      font-size: 0.85rem;
+      margin-left: 8px;
+      font-style: italic;
+    }
+
+    ul#userList button {
+      background: linear-gradient(135deg, #2196f3, #1976d2);
+      border: none;
+      color: white;
+      font-weight: 600;
+      font-size: 0.9rem;
+      padding: 8px 16px;
+      border-radius: 30px;
+      cursor: pointer;
+      box-shadow: 0 6px 12px rgba(25, 118, 210, 0.4);
+      transition: background 0.3s ease, transform 0.15s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      user-select: none;
+    }
+    ul#userList button:disabled {
+      background: #cfd8dc;
+      color: #78909c;
+      box-shadow: none;
+      cursor: default;
+    }
+    ul#userList button:hover:not(:disabled) {
+      background: linear-gradient(135deg, #1565c0, #0d3a7b);
+      transform: translateY(-2px);
+    }
+
+    ul#userList button .icon {
+      font-size: 1.1rem;
+      line-height: 1;
+    }
+
+    .back-link {
+      margin-top: 18px;
+      font-weight: 600;
+      color: #1976d2;
+      text-decoration: none;
+      border-bottom: 2px solid transparent;
+      transition: border-color 0.3s ease;
+      font-size: 1rem;
+      user-select: none;
+      align-self: center;
+    }
+    .back-link:hover {
+      border-color: #1976d2;
+    }
+
+    /* Scrollbar for user list */
+    ul#userList::-webkit-scrollbar {
+      width: 8px;
+    }
+    ul#userList::-webkit-scrollbar-track {
+      background: #eaf3fc;
+      border-radius: 8px;
+    }
+    ul#userList::-webkit-scrollbar-thumb {
+      background: #1976d2;
+      border-radius: 8px;
+    }
+  </style>
 </head>
-<body class="dark">
+<body>
   <div class="container">
     <h2>Add Friends</h2>
-    <p style="text-align: center; font-weight: bold; font-size: 16px;">
+    <p>
       <span id="displayName">You</span>
-      <span style="color: #aaa; font-size: 13px;">(@<span id="usernameDisplay">your_username</span>)</span>
+      <span>@<span id="usernameDisplay">your_username</span></span>
     </p>
     
-    <input type="text" id="searchBar" placeholder="Search users..." />
-    <ul id="userList"></ul>
-    <a href="dashboard.html" class="back-link">Back to Dashboard</a>
+    <input type="text" id="searchBar" placeholder="Search users..." autocomplete="off" aria-label="Search users" />
+
+    <ul id="userList" aria-live="polite" aria-relevant="additions"></ul>
+
+    <a href="dashboard.html" class="back-link" aria-label="Back to dashboard">← Back to Dashboard</a>
   </div>
 
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
   <script>
-    // Firebase config should be in firebase-config.js or set here:
     const firebaseConfig = {
       apiKey: "AIzaSyCx00DmHMLmiDbfFUiBN3w5ueIxAzLqWus",
       authDomain: "chitchat-254bc.firebaseapp.com",
@@ -53,23 +219,19 @@
     let currentFriends = [];
     let pendingRequestsSent = [];
 
-    // Show current user name
     db.collection("users").doc(currentUsername).get().then(doc => {
       if (doc.exists) {
         displayName.textContent = doc.data().name || currentUsername;
       }
     });
 
-    // Fetch all friends and pending friend requests user sent (to hide from list)
     async function fetchFriendsAndRequests() {
-      // Friends accepted
       const friendsSnap = await db.collection("friends")
         .where("user", "==", currentUsername)
         .where("accepted", "==", true)
         .get();
       currentFriends = friendsSnap.docs.map(doc => doc.data().friend);
 
-      // Pending requests user sent
       const requestsSnap = await db.collection("friends")
         .where("user", "==", currentUsername)
         .where("accepted", "==", false)
@@ -88,19 +250,20 @@
 
       filtered.forEach(user => {
         const li = document.createElement("li");
-        li.innerHTML = `<strong>${user.name || user.username}</strong><br><small>@${user.username}</small>`;
+        li.innerHTML = `<div>
+                          <strong>${user.name || user.username}</strong><br/>
+                          <small>@${user.username}</small>
+                        </div>`;
 
         const addBtn = document.createElement("button");
-        addBtn.textContent = "Add";
-
-        // Disable Add if already friend or request sent
         if (currentFriends.includes(user.username)) {
-          addBtn.textContent = "Friends";
+          addBtn.innerHTML = '✔️ Friends';
           addBtn.disabled = true;
         } else if (pendingRequestsSent.includes(user.username)) {
-          addBtn.textContent = "Pending";
+          addBtn.innerHTML = '⏳ Pending';
           addBtn.disabled = true;
         } else {
+          addBtn.innerHTML = '<span class="icon">➕</span> Add';
           addBtn.onclick = () => addFriend(user.username);
         }
 
@@ -117,7 +280,7 @@
       db.collection("friends").add({
         user: currentUsername,
         friend: friendUsername,
-        accepted: false // mark as pending friend request
+        accepted: false
       })
       .then(() => {
         pendingRequestsSent.push(friendUsername);
