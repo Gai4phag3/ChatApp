@@ -80,15 +80,27 @@
     }
   </style>
 
-  <!-- bcryptjs CDN -->
+  <!-- Load bcrypt.js for browser -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/bcryptjs/2.4.3/bcrypt.min.js"></script>
 
-  <!-- Firebase SDKs -->
+  <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
 
-  <!-- Your Firebase config script (make sure it defines "db") -->
-  <script src="firebase-config.js"></script>
+  <script>
+    // Your Firebase config here
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_PROJECT_ID.appspot.com",
+      messagingSenderId: "YOUR_SENDER_ID",
+      appId: "YOUR_APP_ID"
+    };
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+  </script>
 </head>
 <body>
   <div class="popup-container">
@@ -119,12 +131,10 @@
         alert("Please fill in all fields.");
         return;
       }
-
       if (!privacyChecked) {
         alert("You must agree to the Privacy Policy to sign up.");
         return;
       }
-
       if (typeof bcrypt === "undefined") {
         alert("bcrypt library is not loaded!");
         return;
@@ -138,10 +148,15 @@
           return;
         }
 
-        // Hash password with bcryptjs (salt rounds = 10)
-        const hashedPassword = await bcrypt.hash(password, 10);
+        // Hash password using bcryptjs (in browser)
+        const hashedPassword = await new Promise((resolve, reject) => {
+          bcrypt.hash(password, 10, function(err, hash) {
+            if (err) reject(err);
+            else resolve(hash);
+          });
+        });
 
-        // Store user in Firestore
+        // Store user info
         await db.collection("users").doc(username).set({
           name: name,
           password: hashedPassword,
@@ -151,10 +166,11 @@
         // Save user info locally and redirect
         localStorage.setItem("username", username);
         localStorage.setItem("name", name);
-
+        alert("Signup successful! Redirecting...");
         window.location.href = "dashboard.html";
+
       } catch (error) {
-        console.error("Signup error:", error);
+        console.error("Error signing up:", error);
         alert("Something went wrong: " + error.message);
       }
     }
