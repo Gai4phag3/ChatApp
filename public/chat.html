@@ -9,7 +9,7 @@
     body {
       font-family: 'Helvetica Neue', sans-serif;
       background-color: #fefefe;
-      margin: 0; 
+      margin: 0;
       padding: 0;
       display: flex;
       flex-direction: column;
@@ -112,6 +112,7 @@
       padding: 10px;
       border-top: 1px solid #eee;
       background: #ffffff;
+      position: relative;
     }
 
     #input {
@@ -133,10 +134,50 @@
       border-radius: 50%;
       cursor: pointer;
       font-size: 14px;
+      flex-shrink: 0;
     }
 
     button[type="submit"]:hover {
       background: #005bb5;
+    }
+
+    /* Emoji button styling */
+    #emoji-btn {
+      background: none;
+      border: none;
+      font-size: 22px;
+      margin-left: 8px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    #emoji-picker {
+      position: absolute;
+      bottom: 52px;
+      right: 10px;
+      background: white;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      padding: 8px;
+      display: none;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      max-width: 240px;
+      flex-wrap: wrap;
+      gap: 6px;
+      z-index: 100;
+    }
+
+    #emoji-picker span {
+      font-size: 22px;
+      cursor: pointer;
+      user-select: none;
+      padding: 4px;
+      border-radius: 6px;
+      transition: background-color 0.2s;
+    }
+
+    #emoji-picker span:hover {
+      background-color: #eee;
     }
   </style>
 </head>
@@ -156,7 +197,12 @@
 
     <form id="form">
       <input id="input" autocomplete="off" placeholder="Type a message..." />
+      <button type="button" id="emoji-btn" title="Insert emoji">😊</button>
       <button type="submit">➤</button>
+
+      <div id="emoji-picker" aria-label="Emoji picker" role="list">
+        <!-- Emojis inserted by JS -->
+      </div>
     </form>
   </div>
 
@@ -175,6 +221,8 @@
     const form = document.getElementById("form");
     const input = document.getElementById("input");
     const messages = document.getElementById("messages");
+    const emojiBtn = document.getElementById("emoji-btn");
+    const emojiPicker = document.getElementById("emoji-picker");
 
     const username = localStorage.getItem("username");
     const chatWith = localStorage.getItem("chatWith");
@@ -261,6 +309,7 @@
         .add(messageData);
 
       input.value = "";
+      emojiPicker.style.display = "none";
     });
 
     socket.on("chat message", (msg) => {
@@ -279,6 +328,55 @@
       localStorage.removeItem("chatWith");
       window.location.href = "dashboard.html";
     }
+
+    // Emoji picker setup
+    const emojis = [
+      "😀", "😁", "😂", "🤣", "😃", "😄", "😅", "😆",
+      "😉", "😊", "😋", "😎", "😍", "😘", "🥰", "😗",
+      "😙", "😚", "🙂", "🤗", "🤩", "🤔", "😐", "😑",
+      "😶", "🙄", "😏", "😣", "😥", "😮", "🤐", "😯",
+      "😪", "😫", "😴", "😌", "🤓", "😛", "😜", "😝",
+      "🤤", "😒", "😓", "😔", "😕", "🙃", "🤑", "😲"
+    ];
+
+    function toggleEmojiPicker() {
+      if (emojiPicker.style.display === "block") {
+        emojiPicker.style.display = "none";
+      } else {
+        emojiPicker.style.display = "block";
+      }
+    }
+
+    function insertAtCursor(inputElem, textToInsert) {
+      const start = inputElem.selectionStart;
+      const end = inputElem.selectionEnd;
+      const text = inputElem.value;
+      inputElem.value = text.slice(0, start) + textToInsert + text.slice(end);
+      inputElem.selectionStart = inputElem.selectionEnd = start + textToInsert.length;
+      inputElem.focus();
+    }
+
+    // Populate emoji picker
+    emojis.forEach(emoji => {
+      const span = document.createElement("span");
+      span.textContent = emoji;
+      span.title = emoji;
+      span.setAttribute('role', 'option');
+      span.addEventListener("click", () => {
+        insertAtCursor(input, emoji);
+        emojiPicker.style.display = "none";
+      });
+      emojiPicker.appendChild(span);
+    });
+
+    emojiBtn.addEventListener("click", toggleEmojiPicker);
+
+    // Close emoji picker when clicking outside
+    document.addEventListener("click", (event) => {
+      if (!emojiPicker.contains(event.target) && event.target !== emojiBtn) {
+        emojiPicker.style.display = "none";
+      }
+    });
   </script>
 </body>
 </html>
