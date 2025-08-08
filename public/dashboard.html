@@ -3,6 +3,16 @@
 <head>
   <title>Dashboard</title>
   <link rel="icon" href="/favicon.png" type="image/x-icon" />
+  
+  <!-- Font Awesome CDN for icons -->
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    integrity="sha512-papbR6Y63PqH7zAGpS0eDlR4xzQc9fWjRcwJ7zPfp0RV67Q4QX8N6tBk1lLxiVRxliwtEl1HsYNezXyI6x2Mzw=="
+    crossorigin="anonymous"
+    referrerpolicy="no-referrer"
+  />
+  
   <style>
     * {
       box-sizing: border-box;
@@ -13,157 +23,253 @@
       margin: 0;
       padding: 0;
       height: 100%;
-      background: linear-gradient(135deg, #eaf3fc, #f7fbff);
+      background: linear-gradient(135deg, #e0f7fa, #ffffff);
       color: #1a1a1a;
       display: flex;
       flex-direction: column;
+      user-select: none;
     }
 
     .container {
       flex: 1;
       max-width: 1000px;
-      margin: 0 auto;
-      padding: 20px;
+      margin: 40px auto 60px;
+      padding: 30px 40px;
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
       display: flex;
       flex-direction: column;
+      transition: transform 0.3s ease;
+    }
+    .container:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 15px 40px rgba(0,0,0,0.15);
     }
 
     h2 {
       text-align: center;
-      margin-bottom: 20px;
-      color: #0d47a1;
+      margin-bottom: 25px;
+      color: #00796b;
+      font-weight: 700;
+      font-size: 2.4rem;
+      letter-spacing: 1.2px;
+      user-select: text;
+    }
+
+    h2 span {
+      color: #004d40;
+      font-weight: 800;
     }
 
     h3 {
-      margin-top: 20px;
-      margin-bottom: 15px;
-      color: #1976d2;
-      border-bottom: 1px solid #e3f2fd;
-      padding-bottom: 6px;
+      margin-top: 35px;
+      margin-bottom: 20px;
+      color: #00796b;
+      border-bottom: 3px solid #b2dfdb;
+      padding-bottom: 8px;
+      font-size: 1.6rem;
+      font-weight: 600;
     }
 
     /* Top buttons bar */
     .top-buttons {
       display: flex;
-      gap: 10px;
-      margin-bottom: 20px;
+      gap: 15px;
+      margin-bottom: 30px;
       flex-wrap: wrap;
+      justify-content: center;
     }
 
     .top-buttons button {
-      flex: 1;
-      padding: 10px 14px;
-      font-size: 15px;
-      font-weight: 500;
+      flex: 1 1 160px;
+      padding: 14px 22px;
+      font-size: 16px;
+      font-weight: 600;
       border: none;
-      border-radius: 25px;
+      border-radius: 30px;
       cursor: pointer;
       color: #fff;
-      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.12);
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      user-select: none;
+    }
+
+    .top-buttons button i {
+      font-size: 1.2rem;
+      transform: translateY(1px);
     }
 
     .top-buttons .add {
-      background: linear-gradient(135deg, #2196f3, #1976d2);
+      background: linear-gradient(135deg, #26a69a, #00796b);
+      box-shadow: 0 6px 20px rgba(38,166,154,0.5);
     }
 
     .top-buttons .settings {
-      background: linear-gradient(135deg, #9b59b6, #8e44ad);
+      background: linear-gradient(135deg, #7e57c2, #512da8);
+      box-shadow: 0 6px 20px rgba(126,87,194,0.5);
     }
 
     .top-buttons .logout {
-      background: linear-gradient(135deg, #e74c3c, #c0392b);
+      background: linear-gradient(135deg, #ef5350, #b71c1c);
+      box-shadow: 0 6px 20px rgba(239,83,80,0.5);
     }
 
     .top-buttons button:hover {
-      transform: translateY(-1px);
-      opacity: 0.95;
+      filter: brightness(1.1);
+      transform: translateY(-3px) scale(1.05);
+      opacity: 0.98;
     }
 
     /* Friends list styling */
     .friend-button {
       width: 100%;
-      margin-bottom: 10px;
-      padding: 12px 16px;
-      font-size: 16px;
-      background: white;
+      margin-bottom: 12px;
+      padding: 14px 20px;
+      font-size: 17px;
+      background: #e0f2f1;
       border: none;
-      border-radius: 12px;
+      border-radius: 14px;
       cursor: pointer;
-      transition: all 0.2s ease;
+      transition: all 0.25s ease;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+      box-shadow: 0 5px 12px rgba(0, 150, 136, 0.12);
+      font-weight: 600;
+      color: #004d40;
     }
 
     .friend-button:hover {
-      background: #f0f7ff;
-      transform: translateY(-1px);
+      background: #b2dfdb;
+      box-shadow: 0 8px 20px rgba(0, 150, 136, 0.3);
+      transform: translateY(-3px);
+      color: #00796b;
+    }
+
+    .friend-button::before {
+      content: "\f007"; /* FontAwesome user icon */
+      font-family: "Font Awesome 6 Free";
+      font-weight: 900;
+      margin-right: 12px;
+      font-size: 18px;
+      color: #00796b;
+      user-select: none;
     }
 
     .notif {
-      background: #e53935;
+      background: #d81b60;
       color: white;
-      border-radius: 12px;
-      padding: 2px 8px;
-      font-size: 12px;
-      font-weight: bold;
+      border-radius: 50%;
+      padding: 6px 10px;
+      font-size: 13px;
+      font-weight: 700;
+      min-width: 24px;
+      text-align: center;
+      box-shadow: 0 2px 8px rgba(216, 27, 96, 0.5);
       display: none;
+      user-select: none;
     }
 
     /* Friend request cards */
     #friend-requests > div {
-      background: white;
-      padding: 10px;
-      border-radius: 12px;
-      margin-bottom: 10px;
+      background: #f1f8e9;
+      padding: 16px 20px;
+      border-radius: 16px;
+      margin-bottom: 14px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+      box-shadow: 0 5px 15px rgba(139,195,74,0.15);
+      font-weight: 600;
+      color: #558b2f;
+      font-size: 1.1rem;
+      user-select: none;
+    }
+
+    #friend-requests > div::before {
+      content: "\f234"; /* FontAwesome handshake icon */
+      font-family: "Font Awesome 6 Free";
+      font-weight: 900;
+      margin-right: 15px;
+      font-size: 20px;
+      color: #7cb342;
+      user-select: none;
     }
 
     #friend-requests button {
-      padding: 6px 12px;
-      background: linear-gradient(135deg, #2196f3, #1976d2);
+      padding: 8px 18px;
+      background: linear-gradient(135deg, #7cb342, #558b2f);
       color: white;
       border: none;
-      border-radius: 20px;
-      font-size: 14px;
+      border-radius: 24px;
+      font-size: 15px;
       cursor: pointer;
-      transition: all 0.2s ease;
+      font-weight: 700;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      user-select: none;
+    }
+
+    #friend-requests button i {
+      font-size: 1.1rem;
+      transform: translateY(1px);
     }
 
     #friend-requests button:hover {
-      background: linear-gradient(135deg, #1976d2, #1565c0);
+      background: linear-gradient(135deg, #558b2f, #33691e);
+      box-shadow: 0 8px 22px rgba(85,139,47,0.6);
+      transform: translateY(-2px);
     }
 
     /* Scrollbar styling */
     #friend-list::-webkit-scrollbar,
     #friend-requests::-webkit-scrollbar {
-      width: 8px;
+      width: 10px;
     }
 
     #friend-list::-webkit-scrollbar-thumb,
     #friend-requests::-webkit-scrollbar-thumb {
-      background: #90caf9;
-      border-radius: 4px;
+      background: #a5d6a7;
+      border-radius: 6px;
+      transition: background 0.3s ease;
+    }
+
+    #friend-list::-webkit-scrollbar-thumb:hover,
+    #friend-requests::-webkit-scrollbar-thumb:hover {
+      background: #81c784;
     }
 
     #friend-list::-webkit-scrollbar-track,
     #friend-requests::-webkit-scrollbar-track {
-      background: #f0f7ff;
+      background: #f1f8e9;
+    }
+
+    /* Placeholder text style */
+    p {
+      color: #7b7b7b;
+      font-style: italic;
+      font-weight: 500;
+      text-align: center;
+      margin: 20px 0;
+      user-select: none;
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <h2>Welcome, <span id="username-display"></span>!</h2>
+    <h2>Welcome, <span id="username-display"></span>! 😊</h2>
 
     <div class="top-buttons">
-      <button onclick="goToAddFriends()" class="add">➕ Add Friends</button>
-      <button onclick="goToSettings()" class="settings">⚙️ Settings</button>
-      <button onclick="logout()" class="logout">Logout</button>
+      <button onclick="goToAddFriends()" class="add"><i class="fa-solid fa-user-plus"></i> Add Friends</button>
+      <button onclick="goToSettings()" class="settings"><i class="fa-solid fa-gear"></i> Settings</button>
+      <button onclick="logout()" class="logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
     </div>
 
     <h3>Your Friends</h3>
@@ -200,7 +306,7 @@
           friendList.innerHTML = "";
 
           if (snapshot.empty) {
-            friendList.innerHTML = "<p>You have no friends yet. Add some!</p>";
+            friendList.innerHTML = "<p>You have no friends yet. Add some! 🌟</p>";
             return;
           }
 
@@ -234,7 +340,7 @@
         .get()
         .then(snapshot => {
           if (snapshot.empty) {
-            friendRequestsDiv.innerHTML = "<p>No friend requests.</p>";
+            friendRequestsDiv.innerHTML = "<p>No friend requests. You're popular! 🎉</p>";
             return;
           }
 
@@ -245,7 +351,7 @@
             div.textContent = requesterUsername;
 
             const acceptBtn = document.createElement("button");
-            acceptBtn.textContent = "Accept";
+            acceptBtn.innerHTML = '<i class="fa-solid fa-check"></i> Accept';
             acceptBtn.onclick = () => acceptFriendRequest(doc.id, requesterUsername);
 
             div.appendChild(acceptBtn);
@@ -270,7 +376,7 @@
           });
         })
         .then(() => {
-          alert("Friend request accepted!");
+          alert("Friend request accepted! 🎉");
           loadFriendRequests();
           loadFriends();
         })
