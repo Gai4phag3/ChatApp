@@ -47,28 +47,15 @@
       font-size: 14px;
     }
 
-    /* Privacy policy checkbox container */
+    /* Checkbox */
     .checkbox-container {
-      display: flex;
-      align-items: center;
-      margin: 12px 0;
+      margin: 15px 0 0 0;
       font-size: 13px;
-      user-select: none;
+      text-align: left;
     }
-
-    .checkbox-container input[type="checkbox"] {
+    .checkbox-container input {
       margin-right: 8px;
-      width: 16px;
-      height: 16px;
-      cursor: pointer;
-    }
-
-    .checkbox-container a {
-      color: #ffcc70;
-      text-decoration: none;
-    }
-    .checkbox-container a:hover {
-      text-decoration: underline;
+      vertical-align: middle;
     }
 
     /* Button */
@@ -93,11 +80,11 @@
       margin-top: 15px;
       font-size: 13px;
     }
-    .popup-container a.login-link {
+    .popup-container a {
       color: #ffcc70;
       text-decoration: none;
     }
-    .popup-container a.login-link:hover {
+    .popup-container a:hover {
       text-decoration: underline;
     }
 
@@ -107,6 +94,14 @@
       to { opacity: 1; transform: translateY(0); }
     }
   </style>
+
+  <!-- Load bcrypt.js BEFORE your script -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/bcryptjs/2.4.3/bcrypt.min.js"></script>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+  <script src="firebase-config.js"></script>
 </head>
 <body>
   <div class="popup-container">
@@ -114,38 +109,19 @@
     <input type="text" id="name" placeholder="Full Name (can be repeated)" />
     <input type="text" id="username" placeholder="Username (must be unique)" />
     <input type="password" id="password" placeholder="Password" />
-    
+
     <div class="checkbox-container">
       <input type="checkbox" id="privacyPolicy" />
       <label for="privacyPolicy">
-        I agree to the <a href="privacy-policy.html" target="_blank" rel="noopener noreferrer">Privacy Policy</a>
+        I agree to the <a href="privacy-policy.html" target="_blank" style="color:#ffcc70;">Privacy Policy</a>
       </label>
     </div>
-    
+
     <button onclick="signup()">Sign Up</button>
-    <p>Already have an account? <a href="login.html" class="login-link">Login</a></p>
+    <p>Already have an account? <a href="login.html">Login</a></p>
   </div>
 
-  <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
-  <script src="firebase-config.js"></script>
-
-  <!-- bcrypt.js CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/bcryptjs@2.4.3/dist/bcrypt.min.js"></script>
-
   <script>
-    // Wrap bcrypt.hash in a Promise so we can await it
-    async function hashPassword(password) {
-      return new Promise((resolve, reject) => {
-        const saltRounds = 10;
-        bcrypt.hash(password, saltRounds, (err, hash) => {
-          if (err) reject(err);
-          else resolve(hash);
-        });
-      });
-    }
-
     async function signup() {
       const name = document.getElementById("name").value.trim();
       const username = document.getElementById("username").value.trim();
@@ -156,19 +132,22 @@
         alert("Please fill in all fields.");
         return;
       }
+
       if (!privacyChecked) {
         alert("You must agree to the Privacy Policy to sign up.");
         return;
       }
 
       try {
+        // Check if username exists
         const doc = await db.collection("users").doc(username).get();
         if (doc.exists) {
           alert("Username already taken.");
           return;
         }
 
-        const hashedPassword = await hashPassword(password);
+        // Hash the password before storing
+        const hashedPassword = await bcrypt.hash(password, 10);
 
         await db.collection("users").doc(username).set({
           name: name,
@@ -176,13 +155,14 @@
           friends: []
         });
 
+        // Save user info in localStorage and redirect
         localStorage.setItem("username", username);
         localStorage.setItem("name", name);
 
         window.location.href = "dashboard.html";
       } catch (error) {
         console.error("Error signing up:", error);
-        alert("Something went wrong. Please try again.");
+        alert(`Something went wrong: ${error.message}`);
       }
     }
   </script>
