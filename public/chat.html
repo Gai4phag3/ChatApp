@@ -4,9 +4,10 @@
   <meta charset="UTF-8" />
   <title>ChitChat - Chat</title>
   <link rel="icon" href="/favicon.png" type="image/x-icon" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="chat.css" />
   <style>
+    /* Image message styling */
     .message img {
       max-width: 200px;
       max-height: 150px;
@@ -14,6 +15,7 @@
       display: block;
       margin-top: 6px;
     }
+    /* Image upload button */
     #image-upload-btn {
       background: none;
       border: none;
@@ -77,13 +79,13 @@
 
     const chatId = [username, chatWith].sort().join('_');
 
-    // 🔥 Real-time listener for chat messages
+    // --- REAL-TIME LISTENER ---
     db.collection("chats")
       .doc(chatId)
       .collection("messages")
       .orderBy("timestamp", "asc")
       .onSnapshot(snapshot => {
-        messages.innerHTML = "";
+        messages.innerHTML = ""; // Clear and re-render
         snapshot.forEach(doc => {
           const data = doc.data();
           addMessageToUI(data.sender, data.text, data.timestamp);
@@ -93,7 +95,8 @@
 
     function addMessageToUI(sender, text, timestamp) {
       const time = new Date(timestamp).toLocaleTimeString([], {
-        hour: '2-digit', minute: '2-digit'
+        hour: "2-digit",
+        minute: "2-digit"
       });
 
       const wrapper = document.createElement("li");
@@ -129,69 +132,103 @@
       messages.appendChild(wrapper);
     }
 
-    // 🔹 Send message
+    // --- SEND TEXT MESSAGE ---
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
       const text = input.value.trim();
       if (!text) return;
 
+      const messageData = {
+        sender: username,
+        text: text,
+        timestamp: Date.now(),
+      };
+
       await db.collection("chats")
         .doc(chatId)
         .collection("messages")
-        .add({
-          sender: username,
-          text,
-          timestamp: Date.now(),
-        });
+        .add(messageData);
 
       input.value = "";
       emojiPicker.style.display = "none";
     });
 
-    // 🔹 Emoji Picker
-    const emojis = ["😀","😁","😂","🤣","😃","😄","😅","😆","😉","😊","😍","😘","🥰","😗","😙","😚","🙂","🤗","🤩","🤔"];
-    function toggleEmojiPicker() {
-      emojiPicker.style.display = emojiPicker.style.display === "block" ? "none" : "block";
+    function goToDashboard() {
+      localStorage.removeItem("chatWith");
+      window.location.href = "dashboard.html";
     }
-    function insertAtCursor(inputElem, textToInsert) {
-      const start = inputElem.selectionStart;
-      const end = inputElem.selectionEnd;
-      inputElem.value = inputElem.value.slice(0, start) + textToInsert + inputElem.value.slice(end);
-      inputElem.selectionStart = inputElem.selectionEnd = start + textToInsert.length;
-      inputElem.focus();
-    }
+
+    // --- EMOJI PICKER ---
+    const emojis = [
+      "😀","😁","😂","🤣","😃","😄","😅","😆","😉","😊","😋","😎",
+      "😍","😘","🥰","😗","😙","😚","🙂","🤗","🤩","🤔","😐","😑",
+      "😶","🙄","😏","😣","😥","😮","🤐","😯","😪","😫","😴","😌"
+    ];
+
     emojis.forEach(emoji => {
       const span = document.createElement("span");
       span.textContent = emoji;
+      span.style.cursor = "pointer";
       span.addEventListener("click", () => {
         insertAtCursor(input, emoji);
         emojiPicker.style.display = "none";
       });
       emojiPicker.appendChild(span);
     });
-    emojiBtn.addEventListener("click", toggleEmojiPicker);
-    document.addEventListener("click", (event) => {
-      if (!emojiPicker.contains(event.target) && event.target !== emojiBtn) emojiPicker.style.display = "none";
+
+    emojiBtn.addEventListener("click", () => {
+      emojiPicker.style.display =
+        emojiPicker.style.display === "block" ? "none" : "block";
     });
 
-    // 🔹 Image upload
-    imageUploadBtn.addEventListener("click", () => imageInput.click());
+    document.addEventListener("click", (event) => {
+      if (!emojiPicker.contains(event.target) && event.target !== emojiBtn) {
+        emojiPicker.style.display = "none";
+      }
+    });
+
+    function insertAtCursor(inputElem, textToInsert) {
+      const start = inputElem.selectionStart;
+      const end = inputElem.selectionEnd;
+      const text = inputElem.value;
+      inputElem.value =
+        text.slice(0, start) + textToInsert + text.slice(end);
+      inputElem.selectionStart = inputElem.selectionEnd =
+        start + textToInsert.length;
+      inputElem.focus();
+    }
+
+    // --- IMAGE UPLOAD ---
+    imageUploadBtn.addEventListener("click", () => {
+      imageInput.click();
+    });
+
     imageInput.addEventListener("change", (event) => {
       const file = event.target.files[0];
-      if (!file || !file.type.startsWith("image/")) return alert("Please select an image.");
+      if (!file) return;
+      if (!file.type.startsWith("image/")) {
+        alert("Please select a valid image file.");
+        return;
+      }
+
       const reader = new FileReader();
-      reader.onload = e => sendImageMessage(e.target.result);
+      reader.onload = function(e) {
+        sendImageMessage(e.target.result);
+      };
       reader.readAsDataURL(file);
       imageInput.value = "";
     });
+
     input.addEventListener("paste", (event) => {
-      const items = event.clipboardData.items;
+      const items = (event.clipboardData || event.originalEvent.clipboardData).items;
       for (const item of items) {
         if (item.type.indexOf("image") === 0) {
           event.preventDefault();
           const file = item.getAsFile();
           const reader = new FileReader();
-          reader.onload = e => sendImageMessage(e.target.result);
+          reader.onload = function(e) {
+            sendImageMessage(e.target.result);
+          };
           reader.readAsDataURL(file);
           break;
         }
@@ -199,19 +236,16 @@
     });
 
     async function sendImageMessage(imageDataUrl) {
+      const messageData = {
+        sender: username,
+        text: imageDataUrl,
+        timestamp: Date.now(),
+      };
+
       await db.collection("chats")
         .doc(chatId)
         .collection("messages")
-        .add({
-          sender: username,
-          text: imageDataUrl,
-          timestamp: Date.now(),
-        });
-    }
-
-    function goToDashboard() {
-      localStorage.removeItem("chatWith");
-      window.location.href = "dashboard.html";
+        .add(messageData);
     }
   </script>
 </body>
