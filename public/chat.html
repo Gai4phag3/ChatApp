@@ -7,7 +7,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link rel="stylesheet" href="chat.css" />
   <style>
-    /* Add styling for image message */
     .message img {
       max-width: 200px;
       max-height: 150px;
@@ -15,7 +14,6 @@
       display: block;
       margin-top: 6px;
     }
-    /* Image upload button style */
     #image-upload-btn {
       background: none;
       border: none;
@@ -43,15 +41,10 @@
     <form id="form">
       <input id="input" autocomplete="off" placeholder="Type a message..." />
       <button type="button" id="emoji-btn" title="Insert emoji">😊</button>
-      <!-- New image upload button -->
       <button type="button" id="image-upload-btn" title="Send Image">🖼️</button>
       <button type="submit">➤</button>
 
-      <div id="emoji-picker" aria-label="Emoji picker" role="list">
-        <!-- Emojis inserted by JS -->
-      </div>
-
-      <!-- Hidden file input for image upload -->
+      <div id="emoji-picker" aria-label="Emoji picker" role="list"></div>
       <input type="file" id="image-input" accept="image/*" style="display:none" />
     </form>
   </div>
@@ -59,15 +52,9 @@
   <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
-  
-  <!-- Socket.io -->
-  <script src="/socket.io/socket.io.js"></script>
-
-  <!-- Your Firebase config -->
   <script src="firebase-config.js"></script>
 
   <script>
-    const socket = io();
     const form = document.getElementById("form");
     const input = document.getElementById("input");
     const messages = document.getElementById("messages");
@@ -90,33 +77,23 @@
 
     const chatId = [username, chatWith].sort().join('_');
 
-    async function loadMessages() {
-      try {
-        const snapshot = await db
-          .collection("chats")
-          .doc(chatId)
-          .collection("messages")
-          .orderBy("timestamp", "asc")
-          .limit(100)
-          .get();
-
+    // 🔥 Real-time listener for chat messages
+    db.collection("chats")
+      .doc(chatId)
+      .collection("messages")
+      .orderBy("timestamp", "asc")
+      .onSnapshot(snapshot => {
+        messages.innerHTML = "";
         snapshot.forEach(doc => {
           const data = doc.data();
           addMessageToUI(data.sender, data.text, data.timestamp);
         });
-
         messages.scrollTop = messages.scrollHeight;
-      } catch (error) {
-        console.error("Error loading chat:", error);
-      }
-    }
-
-    loadMessages();
+      });
 
     function addMessageToUI(sender, text, timestamp) {
       const time = new Date(timestamp).toLocaleTimeString([], {
-        hour: '2-digit',
-        minute: '2-digit'
+        hour: '2-digit', minute: '2-digit'
       });
 
       const wrapper = document.createElement("li");
@@ -129,7 +106,6 @@
       const bubble = document.createElement("div");
       bubble.className = "message";
 
-      // Detect if message contains image data (starts with "data:image/")
       if (text.startsWith("data:image/")) {
         const img = document.createElement("img");
         img.src = text;
@@ -153,151 +129,89 @@
       messages.appendChild(wrapper);
     }
 
-    form.addEventListener("submit", (e) => {
+    // 🔹 Send message
+    form.addEventListener("submit", async (e) => {
       e.preventDefault();
       const text = input.value.trim();
       if (!text) return;
 
-      const messageData = {
-        sender: username,
-        text: text,
-        timestamp: Date.now(),
-        chatId: chatId
-      };
-
-      socket.emit("chat message", messageData);
-
-      db.collection("chats")
+      await db.collection("chats")
         .doc(chatId)
         .collection("messages")
-        .add(messageData);
+        .add({
+          sender: username,
+          text,
+          timestamp: Date.now(),
+        });
 
       input.value = "";
       emojiPicker.style.display = "none";
     });
 
-    socket.on("chat message", (msg) => {
-      if (!msg || !msg.text || !msg.sender || msg.chatId !== chatId) return;
-      addMessageToUI(msg.sender, msg.text, msg.timestamp || Date.now());
-      messages.scrollTop = messages.scrollHeight;
-    });
-
-    function logout() {
-      localStorage.removeItem("username");
-      localStorage.removeItem("chatWith");
-      window.location.href = "index.html";
-    }
-
-    function goToDashboard() {
-      localStorage.removeItem("chatWith");
-      window.location.href = "dashboard.html";
-    }
-
-    // Emoji picker setup
-    const emojis = [
-      "😀", "😁", "😂", "🤣", "😃", "😄", "😅", "😆",
-      "😉", "😊", "😋", "😎", "😍", "😘", "🥰", "😗",
-      "😙", "😚", "🙂", "🤗", "🤩", "🤔", "😐", "😑",
-      "😶", "🙄", "😏", "😣", "😥", "😮", "🤐", "😯",
-      "😪", "😫", "😴", "😌", "🤓", "😛", "😜", "😝",
-      "🤤", "😒", "😓", "😔", "😕", "🙃", "🤑", "😲"
-    ];
-
+    // 🔹 Emoji Picker
+    const emojis = ["😀","😁","😂","🤣","😃","😄","😅","😆","😉","😊","😍","😘","🥰","😗","😙","😚","🙂","🤗","🤩","🤔"];
     function toggleEmojiPicker() {
-      if (emojiPicker.style.display === "block") {
-        emojiPicker.style.display = "none";
-      } else {
-        emojiPicker.style.display = "block";
-      }
+      emojiPicker.style.display = emojiPicker.style.display === "block" ? "none" : "block";
     }
-
     function insertAtCursor(inputElem, textToInsert) {
       const start = inputElem.selectionStart;
       const end = inputElem.selectionEnd;
-      const text = inputElem.value;
-      inputElem.value = text.slice(0, start) + textToInsert + text.slice(end);
+      inputElem.value = inputElem.value.slice(0, start) + textToInsert + inputElem.value.slice(end);
       inputElem.selectionStart = inputElem.selectionEnd = start + textToInsert.length;
       inputElem.focus();
     }
-
-    // Populate emoji picker
     emojis.forEach(emoji => {
       const span = document.createElement("span");
       span.textContent = emoji;
-      span.title = emoji;
-      span.setAttribute('role', 'option');
       span.addEventListener("click", () => {
         insertAtCursor(input, emoji);
         emojiPicker.style.display = "none";
       });
       emojiPicker.appendChild(span);
     });
-
     emojiBtn.addEventListener("click", toggleEmojiPicker);
-
-    // Close emoji picker when clicking outside
     document.addEventListener("click", (event) => {
-      if (!emojiPicker.contains(event.target) && event.target !== emojiBtn) {
-        emojiPicker.style.display = "none";
-      }
+      if (!emojiPicker.contains(event.target) && event.target !== emojiBtn) emojiPicker.style.display = "none";
     });
 
-    // Image upload button click opens file picker
-    imageUploadBtn.addEventListener("click", () => {
-      imageInput.click();
-    });
-
-    // Handle image file selected
+    // 🔹 Image upload
+    imageUploadBtn.addEventListener("click", () => imageInput.click());
     imageInput.addEventListener("change", (event) => {
       const file = event.target.files[0];
-      if (!file) return;
-
-      if (!file.type.startsWith("image/")) {
-        alert("Please select a valid image file.");
-        return;
-      }
-
+      if (!file || !file.type.startsWith("image/")) return alert("Please select an image.");
       const reader = new FileReader();
-      reader.onload = function(e) {
-        sendImageMessage(e.target.result);
-      };
+      reader.onload = e => sendImageMessage(e.target.result);
       reader.readAsDataURL(file);
-
-      // Clear the input for next use
       imageInput.value = "";
     });
-
-    // Handle paste events on input for image
     input.addEventListener("paste", (event) => {
-      const items = (event.clipboardData || event.originalEvent.clipboardData).items;
+      const items = event.clipboardData.items;
       for (const item of items) {
         if (item.type.indexOf("image") === 0) {
           event.preventDefault();
           const file = item.getAsFile();
           const reader = new FileReader();
-          reader.onload = function(e) {
-            sendImageMessage(e.target.result);
-          };
+          reader.onload = e => sendImageMessage(e.target.result);
           reader.readAsDataURL(file);
           break;
         }
       }
     });
 
-    function sendImageMessage(imageDataUrl) {
-      const messageData = {
-        sender: username,
-        text: imageDataUrl,
-        timestamp: Date.now(),
-        chatId: chatId
-      };
-
-      socket.emit("chat message", messageData);
-
-      db.collection("chats")
+    async function sendImageMessage(imageDataUrl) {
+      await db.collection("chats")
         .doc(chatId)
         .collection("messages")
-        .add(messageData);
+        .add({
+          sender: username,
+          text: imageDataUrl,
+          timestamp: Date.now(),
+        });
+    }
+
+    function goToDashboard() {
+      localStorage.removeItem("chatWith");
+      window.location.href = "dashboard.html";
     }
   </script>
 </body>
